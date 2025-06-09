@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treatment Vision Analysis - Test Interface</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        .analysis-section {
+            margin-bottom: 40px;
+            padding: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .analysis-section h2 {
+            color: #34495e;
+            margin-top: 0;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        input[type="text"], input[type="file"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 6px;
+            display: none;
+        }
+        .results.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .results.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .json-display {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .file-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Treatment Vision Analysis</h1>
+        <p class="subtitle">Upload medical documents, prescriptions, insurance cards, or treatment forms for AI analysis</p>
+
+        <!-- Medical Document Analysis -->
+        <div class="analysis-section">
+            <h2>📋 Medical Document Analysis</h2>
+            <form id="medicalForm">
+                <div class="form-group">
+                    <label for="medicalUserId">User ID:</label>
+                    <input type="text" id="medicalUserId" value="test-user-123" required>
+                </div>
+                <div class="form-group">
+                    <label for="medicalDocType">Document Type:</label>
+                    <select id="medicalDocType">
+                        <option value="medical_report">Medical Report</option>
+                        <option value="lab_results">Lab Results</option>
+                        <option value="doctor_notes">Doctor Notes</option>
+                        <option value="test_results">Test Results</option>
+                        <option value="discharge_summary">Discharge Summary</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="medicalContext">Additional Context (optional):</label>
+                    <textarea id="medicalContext" placeholder="Any additional context about the document..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="medicalFile">Upload Medical Document:</label>
+                    <input type="file" id="medicalFile" accept="image/*" required>
+                    <div class="file-info">Supported formats: JPG, PNG, GIF, WebP (max 20MB)</div>
+                </div>
+                <button type="submit">Analyze Medical Document</button>
+                
+                <div class="loading" id="medicalLoading">
+                    <div class="spinner"></div>
+                    <p>Analyzing medical document...</p>
+                </div>
+                <div class="results" id="medicalResults"></div>
+            </form>
+        </div>
+
+        <!-- Prescription Analysis -->
+        <div class="analysis-section">
+            <h2>💊 Prescription Label Analysis</h2>
+            <form id="prescriptionForm">
+                <div class="form-group">
+                    <label for="prescriptionUserId">User ID:</label>
+                    <input type="text" id="prescriptionUserId" value="test-user-123" required>
+                </div>
+                <div class="form-group">
+                    <label for="prescriptionFile">Upload Prescription Label:</label>
+                    <input type="file" id="prescriptionFile" accept="image/*" required>
+                    <div class="file-info">Supported formats: JPG, PNG, GIF, WebP (max 20MB)</div>
+                </div>
+                <button type="submit">Analyze Prescription</button>
+                
+                <div class="loading" id="prescriptionLoading">
+                    <div class="spinner"></div>
+                    <p>Analyzing prescription label...</p>
+                </div>
+                <div class="results" id="prescriptionResults"></div>
+            </form>
+        </div>
+
+        <!-- Insurance Card Analysis -->
+        <div class="analysis-section">
+            <h2>🏥 Insurance Card Analysis</h2>
+            <form id="insuranceForm">
+                <div class="form-group">
+                    <label for="insuranceUserId">User ID:</label>
+                    <input type="text" id="insuranceUserId" value="test-user-123" required>
+                </div>
+                <div class="form-group">
+                    <label for="insuranceFile">Upload Insurance Card:</label>
+                    <input type="file" id="insuranceFile" accept="image/*" required>
+                    <div class="file-info">Supported formats: JPG, PNG, GIF, WebP (max 20MB)</div>
+                </div>
+                <button type="submit">Analyze Insurance Card</button>
+                
+                <div class="loading" id="insuranceLoading">
+                    <div class="spinner"></div>
+                    <p>Analyzing insurance card...</p>
+                </div>
+                <div class="results" id="insuranceResults"></div>
+            </form>
+        </div>
+
+        <!-- Treatment Form Analysis -->
+        <div class="analysis-section">
+            <h2>📝 Treatment Form Analysis</h2>
+            <form id="treatmentForm">
+                <div class="form-group">
+                    <label for="treatmentUserId">User ID:</label>
+                    <input type="text" id="treatmentUserId" value="test-user-123" required>
+                </div>
+                <div class="form-group">
+                    <label for="treatmentFormType">Form Type:</label>
+                    <select id="treatmentFormType">
+                        <option value="intake_form">Intake Form</option>
+                        <option value="consent_form">Consent Form</option>
+                        <option value="history_form">Medical History Form</option>
+                        <option value="referral_form">Referral Form</option>
+                        <option value="insurance_form">Insurance Form</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="treatmentFile">Upload Treatment Form:</label>
+                    <input type="file" id="treatmentFile" accept="image/*" required>
+                    <div class="file-info">Supported formats: JPG, PNG, GIF, WebP (max 20MB)</div>
+                </div>
+                <button type="submit">Analyze Treatment Form</button>
+                
+                <div class="loading" id="treatmentLoading">
+                    <div class="spinner"></div>
+                    <p>Analyzing treatment form...</p>
+                </div>
+                <div class="results" id="treatmentResults"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Generic function to handle form submissions
+        async function handleFormSubmission(formId, endpoint, loadingId, resultsId, getFormData) {
+            const form = document.getElementById(formId);
+            const loading = document.getElementById(loadingId);
+            const results = document.getElementById(resultsId);
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Show loading, hide results
+                loading.style.display = 'block';
+                results.style.display = 'none';
+                
+                // Disable submit button
+                const submitButton = form.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                
+                try {
+                    const formData = getFormData();
+                    
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    // Show results
+                    results.className = result.success ? 'results success' : 'results error';
+                    results.innerHTML = `
+                        <h3>${result.success ? '✅ Analysis Complete' : '❌ Analysis Failed'}</h3>
+                        ${result.error_message ? `<p><strong>Error:</strong> ${result.error_message}</p>` : ''}
+                        <div class="json-display">${JSON.stringify(result, null, 2)}</div>
+                    `;
+                    results.style.display = 'block';
+                    
+                } catch (error) {
+                    results.className = 'results error';
+                    results.innerHTML = `
+                        <h3>❌ Request Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    `;
+                    results.style.display = 'block';
+                } finally {
+                    loading.style.display = 'none';
+                    submitButton.disabled = false;
+                }
+            });
+        }
+
+        // Medical Document Form
+        handleFormSubmission('medicalForm', '/api/vision/analyze_medical_document', 'medicalLoading', 'medicalResults', () => {
+            const formData = new FormData();
+            formData.append('user_id', document.getElementById('medicalUserId').value);
+            formData.append('document_type', document.getElementById('medicalDocType').value);
+            formData.append('additional_context', document.getElementById('medicalContext').value);
+            formData.append('file', document.getElementById('medicalFile').files[0]);
+            return formData;
+        });
+
+        // Prescription Form
+        handleFormSubmission('prescriptionForm', '/api/vision/analyze_prescription', 'prescriptionLoading', 'prescriptionResults', () => {
+            const formData = new FormData();
+            formData.append('user_id', document.getElementById('prescriptionUserId').value);
+            formData.append('file', document.getElementById('prescriptionFile').files[0]);
+            return formData;
+        });
+
+        // Insurance Form
+        handleFormSubmission('insuranceForm', '/api/vision/analyze_insurance_card', 'insuranceLoading', 'insuranceResults', () => {
+            const formData = new FormData();
+            formData.append('user_id', document.getElementById('insuranceUserId').value);
+            formData.append('file', document.getElementById('insuranceFile').files[0]);
+            return formData;
+        });
+
+        // Treatment Form
+        handleFormSubmission('treatmentForm', '/api/vision/analyze_treatment_form', 'treatmentLoading', 'treatmentResults', () => {
+            const formData = new FormData();
+            formData.append('user_id', document.getElementById('treatmentUserId').value);
+            formData.append('form_type', document.getElementById('treatmentFormType').value);
+            formData.append('file', document.getElementById('treatmentFile').files[0]);
+            return formData;
+        });
+    </script>
+</body>
+</html> 

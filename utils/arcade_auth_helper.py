@@ -5,6 +5,7 @@ import logging
 from typing import Callable, Awaitable, Any, Optional, Dict, TypeVar, Tuple
 
 from arcadepy import AsyncArcade
+from arcadepy import AuthenticationError as ArcadeAuthenticationError
 from agents_arcade.errors import AuthorizationError as ArcadeAuthorizationError
 from agents import Agent, Runner # For type hinting the callable
 from agents.result import RunResult # Specific result type for Runner.run
@@ -16,11 +17,12 @@ T_AgentResult = TypeVar('T_AgentResult')
 
 class AuthHelperError(Exception):
     """Custom exception for auth helper specific issues."""
-    def __init__(self, message: str, auth_url: Optional[str] = None, auth_id_for_wait: Optional[str] = None, requires_user_action: bool = False):
+    def __init__(self, message: str, auth_url: Optional[str] = None, auth_id_for_wait: Optional[str] = None, requires_user_action: bool = False, is_api_key_invalid: bool = False):
         super().__init__(message)
         self.auth_url = auth_url
         self.auth_id_for_wait = auth_id_for_wait
         self.requires_user_action = requires_user_action # True if user needs to visit auth_url
+        self.is_api_key_invalid = is_api_key_invalid # True if the API key itself is invalid
 
 async def handle_auth_flow_explicitly(
     arcade_client: AsyncArcade,
@@ -117,6 +119,14 @@ async def run_agent_with_auth_handling(
                 context=current_context,
                 **run_config_kwargs
             )
+    except ArcadeAuthenticationError as e:
+        # Invalid API key - this is a configuration issue, not a user authorization issue
+        logger.error(f"ArcadeAuthenticationError for user {user_id}, agent {starting_agent.name}. Invalid API key: {e}")
+        raise AuthHelperError(
+            message=f"Arcade API key is invalid or expired. Please contact support to update the API credentials.",
+            requires_user_action=False,
+            is_api_key_invalid=True
+        )
     except ArcadeAuthorizationError as e:
         tool_name = getattr(e, 'tool_name', 'Unknown Tool')
         toolkit_name = getattr(e, 'toolkit_name', 'Unknown Toolkit')

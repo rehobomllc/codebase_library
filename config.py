@@ -4,8 +4,6 @@ from dotenv import load_dotenv
 import ssl
 import certifi
 
-# Load environment variables from .env file in the current directory (scholarship_chat_app)
-# Assuming .env is in the same directory as app.py, which imports this config.py
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 load_dotenv(dotenv_path=os.path.join(BASE_DIR, ".env"))
 
@@ -19,7 +17,7 @@ ssl_context.check_hostname = True
 ssl_context.verify_mode = ssl.CERT_REQUIRED
 
 class Config:
-    """Enhanced configuration management for scholarship app with Arcade and OpenAI Agents SDK integration."""
+    """Enhanced configuration management for app with Arcade and OpenAI Agents SDK integration."""
 
     # --- Core API Keys ---
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
@@ -32,12 +30,19 @@ class Config:
 
     # --- Agent Configuration ---
     DEFAULT_AGENT_MODEL: str = os.getenv("DEFAULT_AGENT_MODEL", "gpt-4.1") # Default model for agents
+    
+    # --- Vision Configuration ---
+    VISION_MODEL: str = os.getenv("VISION_MODEL", "gpt-4o") # Model for vision analysis using Responses API
+    MAX_VISION_FILE_SIZE_MB: int = int(os.getenv("MAX_VISION_FILE_SIZE_MB", "20")) # Max file size for image uploads
+    SUPPORTED_IMAGE_FORMATS: List[str] = os.getenv("SUPPORTED_IMAGE_FORMATS", "jpg,jpeg,png,gif,webp").split(",")
+    VISION_MAX_OUTPUT_TOKENS: int = int(os.getenv("VISION_MAX_OUTPUT_TOKENS", "1000"))
+    ENABLE_VISION_ANALYSIS: bool = os.getenv("ENABLE_VISION_ANALYSIS", "true").lower() == "true"
 
     # --- Enhanced Validation Settings ---
     VALIDATION_AGENT_VERSION: str = os.getenv("VALIDATION_AGENT_VERSION", "v2_arcade")
     MAX_CONCURRENT_VALIDATIONS: int = int(os.getenv("MAX_CONCURRENT_VALIDATIONS", "3"))
     SCRAPE_TIMEOUT_SECONDS: int = int(os.getenv("SCRAPE_TIMEOUT_SECONDS", "30"))
-    MAX_PAGES_PER_SCHOLARSHIP: int = int(os.getenv("MAX_PAGES_PER_SCHOLARSHIP", "5"))
+    MAX_PAGES_PER_TREATMENT: int = int(os.getenv("MAX_PAGES_PER_TREATMENT", "5"))
 
     # --- Cost Management ---
     DAILY_API_COST_LIMIT: float = float(os.getenv("DAILY_API_COST_LIMIT", "10.00"))
@@ -45,11 +50,11 @@ class Config:
     RATE_LIMIT_REQUESTS_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE", "60"))
 
     # --- Monitoring Configuration ---
-    ENABLE_SCHOLARSHIP_MONITORING: bool = os.getenv("ENABLE_SCHOLARSHIP_MONITORING", "true").lower() == "true"
+    ENABLE_TREATMENT_MONITORING: bool = os.getenv("ENABLE_TREATMENT_MONITORING", "true").lower() == "true"
     MONITORING_INTERVAL_HOURS: int = int(os.getenv("MONITORING_INTERVAL_HOURS", "24"))
     TARGET_MONITORING_SITES: List[str] = os.getenv(
         "TARGET_MONITORING_SITES",
-        "https://www.fastweb.com,https://www.scholarships.com,https://www.cappex.com"
+        "https://www.clinicaltrials.gov,https://www.cdc.gov,https://www.nih.gov"
     ).split(",")
 
     # --- Performance Settings ---
@@ -112,6 +117,15 @@ class Config:
         if not (1 <= cls.MAX_CONCURRENT_VALIDATIONS <= 10):
             errors.append("MAX_CONCURRENT_VALIDATIONS should be between 1 and 10 for optimal performance and resource usage.")
 
+        # Check vision configuration
+        if cls.ENABLE_VISION_ANALYSIS:
+            if cls.MAX_VISION_FILE_SIZE_MB <= 0 or cls.MAX_VISION_FILE_SIZE_MB > 100:
+                errors.append("MAX_VISION_FILE_SIZE_MB should be between 1 and 100 MB.")
+            if not cls.SUPPORTED_IMAGE_FORMATS:
+                errors.append("SUPPORTED_IMAGE_FORMATS cannot be empty when vision analysis is enabled.")
+            if cls.VISION_MAX_OUTPUT_TOKENS < 100 or cls.VISION_MAX_OUTPUT_TOKENS > 4000:
+                errors.append("VISION_MAX_OUTPUT_TOKENS should be between 100 and 4000.")
+
         # Check SSL configuration if HTTPS is enabled
         if cls.USE_HTTPS:
             if not cls.SSL_CERT_FILE:
@@ -140,8 +154,10 @@ class Config:
             "google_tools_enabled": cls.ENABLE_ARCADE_GOOGLE_TOOLS,
             "monitoring_enabled": cls.ENABLE_PROACTIVE_MONITORING,
             "cost_tracking_enabled": cls.ENABLE_COST_TRACKING,
+            "vision_analysis_enabled": cls.ENABLE_VISION_ANALYSIS,
             "arcade_web_features_operational": arcade_web_dependent_features_ok,
             "arcade_google_tools_operational": google_tools_ok,
+            "vision_features_operational": bool(cls.OPENAI_API_KEY) or not cls.ENABLE_VISION_ANALYSIS,
             "overall_configuration_valid": len(cls.validate_configuration()) == 0
         }
 

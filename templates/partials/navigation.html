@@ -1,0 +1,916 @@
+<!-- Main Navigation -->
+<nav class="main-nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-container">
+        <!-- Logo and Brand -->
+        <div class="nav-brand">
+            <a href="/" class="brand-link" aria-label="Treatment Navigator - Go to homepage">
+                <div class="brand-icon">
+                    <i class="fas fa-heart-pulse" aria-hidden="true"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">Treatment Navigator</span>
+                    <span class="brand-tagline">Compassionate Care</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" aria-expanded="false" aria-controls="mobile-menu" aria-label="Toggle navigation menu">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+        </button>
+
+        <!-- Main Navigation Menu -->
+        <div class="nav-menu" id="main-menu">
+            <ul class="nav-links" role="menubar">
+                <li class="nav-item" role="none">
+                    <a href="/" class="nav-link" role="menuitem" aria-label="Home - Treatment Navigator homepage">
+                        <i class="fas fa-home" aria-hidden="true"></i>
+                        <span>Home</span>
+                    </a>
+                </li>
+                <li class="nav-item" role="none">
+                    <a href="/treatment-search" class="nav-link" role="menuitem" aria-label="Find Treatment - Search for treatment options">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <span>Find Treatment</span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown" role="none">
+                    <button class="nav-link dropdown-toggle" role="menuitem" aria-expanded="false" aria-haspopup="true" aria-controls="tools-menu">
+                        <i class="fas fa-tools" aria-hidden="true"></i>
+                        <span>Tools</span>
+                        <i class="fas fa-chevron-down dropdown-arrow" aria-hidden="true"></i>
+                    </button>
+                    <ul class="dropdown-menu" id="tools-menu" role="menu" aria-label="Tools submenu">
+                        <li role="none">
+                            <a href="/vision-test" class="dropdown-link" role="menuitem">
+                                <i class="fas fa-camera" aria-hidden="true"></i>
+                                Vision Analysis
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/treatment-onboarding" class="dropdown-link" role="menuitem">
+                                <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+                                Treatment Onboarding
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/insurance-verification" class="dropdown-link" role="menuitem">
+                                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                                Insurance Check
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/progress-tracker" class="dropdown-link" role="menuitem">
+                                <i class="fas fa-chart-line" aria-hidden="true"></i>
+                                Progress Tracker
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item" role="none">
+                    <a href="/resources" class="nav-link" role="menuitem" aria-label="Resources - Educational materials and support">
+                        <i class="fas fa-book-open" aria-hidden="true"></i>
+                        <span>Resources</span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown" role="none">
+                    <button class="nav-link dropdown-toggle" role="menuitem" aria-expanded="false" aria-haspopup="true" aria-controls="support-menu">
+                        <i class="fas fa-life-ring" aria-hidden="true"></i>
+                        <span>Support</span>
+                        <i class="fas fa-chevron-down dropdown-arrow" aria-hidden="true"></i>
+                    </button>
+                    <ul class="dropdown-menu" id="support-menu" role="menu" aria-label="Support submenu">
+                        <li role="none">
+                            <a href="tel:988" class="dropdown-link crisis-link" role="menuitem">
+                                <i class="fas fa-heart" aria-hidden="true"></i>
+                                Crisis Lifeline (988)
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/help" class="dropdown-link" role="menuitem">
+                                <i class="fas fa-question-circle" aria-hidden="true"></i>
+                                Help & FAQ
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/contact" class="dropdown-link" role="menuitem">
+                                <i class="fas fa-envelope" aria-hidden="true"></i>
+                                Contact Us
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/feedback" class="dropdown-link" role="menuitem">
+                                <i class="fas fa-comment-dots" aria-hidden="true"></i>
+                                Feedback
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <!-- Search Bar -->
+            <div class="nav-search">
+                <form class="search-form" role="search" aria-label="Search treatments">
+                    <div class="search-input-group">
+                        <input type="search" 
+                               id="search-input" 
+                               class="search-input" 
+                               placeholder="Search treatments..." 
+                               aria-label="Search for treatments"
+                               autocomplete="off"
+                               spellcheck="false">
+                        <button type="submit" class="search-button" aria-label="Submit search">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="search-suggestions" id="search-suggestions" role="listbox" aria-label="Search suggestions"></div>
+                </form>
+            </div>
+
+            <!-- User Account (if logged in) -->
+            <div class="nav-user">
+                <button class="user-menu-toggle" aria-expanded="false" aria-controls="user-menu" aria-label="User account menu">
+                    <div class="user-avatar">
+                        <i class="fas fa-user" aria-hidden="true"></i>
+                    </div>
+                    <span class="user-name">Account</span>
+                    <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                </button>
+                <ul class="user-menu" id="user-menu" role="menu" aria-label="User account menu">
+                    <li role="none">
+                        <a href="/profile" class="user-menu-link" role="menuitem">
+                            <i class="fas fa-user-circle" aria-hidden="true"></i>
+                            My Profile
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="/appointments" class="user-menu-link" role="menuitem">
+                            <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                            Appointments
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="/settings" class="user-menu-link" role="menuitem">
+                            <i class="fas fa-cog" aria-hidden="true"></i>
+                            Settings
+                        </a>
+                    </li>
+                    <li role="none">
+                        <a href="/logout" class="user-menu-link" role="menuitem">
+                            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                            Sign Out
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="mobile-menu hidden" id="mobile-menu">
+            <div class="mobile-menu-content">
+                <!-- Search in mobile -->
+                <div class="mobile-search">
+                    <form class="search-form" role="search">
+                        <input type="search" 
+                               class="search-input mobile" 
+                               placeholder="Search treatments..." 
+                               aria-label="Search for treatments">
+                        <button type="submit" class="search-button mobile" aria-label="Submit search">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Mobile Navigation Links -->
+                <ul class="mobile-nav-links">
+                    <li><a href="/" class="mobile-nav-link">
+                        <i class="fas fa-home" aria-hidden="true"></i>Home
+                    </a></li>
+                    <li><a href="/treatment-search" class="mobile-nav-link">
+                        <i class="fas fa-search" aria-hidden="true"></i>Find Treatment
+                    </a></li>
+                    <li><a href="/vision-test" class="mobile-nav-link">
+                        <i class="fas fa-camera" aria-hidden="true"></i>Vision Analysis
+                    </a></li>
+                    <li><a href="/treatment-onboarding" class="mobile-nav-link">
+                        <i class="fas fa-clipboard-list" aria-hidden="true"></i>Treatment Onboarding
+                    </a></li>
+                    <li><a href="/resources" class="mobile-nav-link">
+                        <i class="fas fa-book-open" aria-hidden="true"></i>Resources
+                    </a></li>
+                    <li><a href="/help" class="mobile-nav-link">
+                        <i class="fas fa-question-circle" aria-hidden="true"></i>Help & FAQ
+                    </a></li>
+                </ul>
+
+                <!-- Crisis Support in Mobile -->
+                <div class="mobile-crisis">
+                    <h3>Need Help Now?</h3>
+                    <a href="tel:988" class="mobile-crisis-button">
+                        <i class="fas fa-phone" aria-hidden="true"></i>
+                        Call 988 - Crisis Lifeline
+                    </a>
+                    <a href="tel:911" class="mobile-crisis-button emergency">
+                        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                        Call 911 - Emergency
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<style>
+/* Main Navigation Styles */
+.main-nav {
+    background: var(--bg-primary, #ffffff);
+    border-bottom: 1px solid var(--border-light, #e5e7eb);
+    box-shadow: var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky, 1020);
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-4, 1rem);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: relative;
+}
+
+/* Brand/Logo */
+.nav-brand {
+    flex-shrink: 0;
+}
+
+.brand-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    text-decoration: none;
+    color: var(--text-primary, #111827);
+    transition: opacity var(--duration-200, 200ms) var(--ease-out);
+}
+
+.brand-link:hover {
+    opacity: 0.8;
+}
+
+.brand-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--primary-color, #2563eb), var(--secondary-color, #10b981));
+    border-radius: var(--radius-lg, 0.5rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: var(--text-lg, 1.125rem);
+}
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.brand-name {
+    font-weight: var(--font-bold, 700);
+    font-size: var(--text-lg, 1.125rem);
+    line-height: var(--leading-tight, 1.25);
+}
+
+.brand-tagline {
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary, #6b7280);
+    line-height: var(--leading-tight, 1.25);
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: var(--space-2, 0.5rem);
+    cursor: pointer;
+    border-radius: var(--radius-md, 0.375rem);
+    transition: background-color var(--duration-200, 200ms) var(--ease-out);
+}
+
+.mobile-menu-toggle:hover {
+    background: var(--bg-secondary, #f9fafb);
+}
+
+.hamburger-line {
+    width: 24px;
+    height: 2px;
+    background: var(--text-primary, #111827);
+    border-radius: 1px;
+    transition: all var(--duration-200, 200ms) var(--ease-out);
+}
+
+.mobile-menu-toggle[aria-expanded="true"] .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px);
+}
+
+.mobile-menu-toggle[aria-expanded="true"] .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.mobile-menu-toggle[aria-expanded="true"] .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* Main Navigation Menu */
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8, 2rem);
+    flex: 1;
+    justify-content: space-between;
+    margin-left: var(--space-8, 2rem);
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6, 1.5rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-item {
+    position: relative;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    color: var(--text-secondary, #6b7280);
+    text-decoration: none;
+    font-weight: var(--font-medium, 500);
+    font-size: var(--text-sm, 0.875rem);
+    border-radius: var(--radius-md, 0.375rem);
+    transition: all var(--duration-200, 200ms) var(--ease-out);
+    background: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+    color: var(--primary-color, #2563eb);
+    background: var(--primary-50, #eff6ff);
+}
+
+.nav-link.active {
+    color: var(--primary-color, #2563eb);
+    background: var(--primary-100, #dbeafe);
+}
+
+/* Dropdown Menus */
+.dropdown {
+    position: relative;
+}
+
+.dropdown-toggle {
+    cursor: pointer;
+}
+
+.dropdown-arrow {
+    font-size: var(--text-xs, 0.75rem);
+    transition: transform var(--duration-200, 200ms) var(--ease-out);
+}
+
+.dropdown-toggle[aria-expanded="true"] .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-light, #e5e7eb);
+    border-radius: var(--radius-lg, 0.5rem);
+    box-shadow: var(--shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.1));
+    padding: var(--space-2, 0.5rem);
+    min-width: 200px;
+    list-style: none;
+    margin: var(--space-1, 0.25rem) 0 0 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all var(--duration-200, 200ms) var(--ease-out);
+    z-index: var(--z-dropdown, 1010);
+}
+
+.dropdown:hover .dropdown-menu,
+.dropdown-toggle[aria-expanded="true"] + .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    color: var(--text-secondary, #6b7280);
+    text-decoration: none;
+    font-size: var(--text-sm, 0.875rem);
+    border-radius: var(--radius-md, 0.375rem);
+    transition: all var(--duration-150, 150ms) var(--ease-out);
+    white-space: nowrap;
+}
+
+.dropdown-link:hover,
+.dropdown-link:focus {
+    color: var(--text-primary, #111827);
+    background: var(--bg-secondary, #f9fafb);
+}
+
+.crisis-link {
+    color: var(--crisis-color, #dc2626) !important;
+    font-weight: var(--font-semibold, 600);
+}
+
+.crisis-link:hover {
+    background: var(--crisis-bg, #fef2f2) !important;
+}
+
+/* Search Bar */
+.nav-search {
+    position: relative;
+}
+
+.search-form {
+    position: relative;
+}
+
+.search-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-input {
+    width: 240px;
+    padding: var(--space-2, 0.5rem) var(--space-10, 2.5rem) var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--border-light, #e5e7eb);
+    border-radius: var(--radius-lg, 0.5rem);
+    font-size: var(--text-sm, 0.875rem);
+    background: var(--bg-secondary, #f9fafb);
+    transition: all var(--duration-200, 200ms) var(--ease-out);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary-color, #2563eb);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    background: var(--bg-primary, #ffffff);
+}
+
+.search-button {
+    position: absolute;
+    right: var(--space-1, 0.25rem);
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: var(--space-2, 0.5rem);
+    color: var(--text-light, #6b7280);
+    cursor: pointer;
+    border-radius: var(--radius-md, 0.375rem);
+    transition: color var(--duration-150, 150ms) var(--ease-out);
+}
+
+.search-button:hover {
+    color: var(--primary-color, #2563eb);
+}
+
+/* Search Suggestions */
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-light, #e5e7eb);
+    border-radius: var(--radius-lg, 0.5rem);
+    box-shadow: var(--shadow-lg);
+    margin-top: var(--space-1, 0.25rem);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: var(--z-dropdown, 1010);
+    display: none;
+}
+
+/* User Menu */
+.nav-user {
+    position: relative;
+}
+
+.user-menu-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    background: none;
+    border: 1px solid var(--border-light, #e5e7eb);
+    padding: var(--space-2, 0.5rem);
+    border-radius: var(--radius-lg, 0.5rem);
+    cursor: pointer;
+    transition: all var(--duration-200, 200ms) var(--ease-out);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--text-secondary, #6b7280);
+}
+
+.user-menu-toggle:hover {
+    border-color: var(--primary-color, #2563eb);
+    color: var(--primary-color, #2563eb);
+}
+
+.user-avatar {
+    width: 24px;
+    height: 24px;
+    background: var(--primary-100, #dbeafe);
+    border-radius: var(--radius-full, 9999px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color, #2563eb);
+    font-size: var(--text-xs, 0.75rem);
+}
+
+.user-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-light, #e5e7eb);
+    border-radius: var(--radius-lg, 0.5rem);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-2, 0.5rem);
+    min-width: 180px;
+    list-style: none;
+    margin: var(--space-1, 0.25rem) 0 0 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all var(--duration-200, 200ms) var(--ease-out);
+    z-index: var(--z-dropdown, 1010);
+}
+
+.user-menu-toggle[aria-expanded="true"] + .user-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.user-menu-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    color: var(--text-secondary, #6b7280);
+    text-decoration: none;
+    font-size: var(--text-sm, 0.875rem);
+    border-radius: var(--radius-md, 0.375rem);
+    transition: all var(--duration-150, 150ms) var(--ease-out);
+    white-space: nowrap;
+}
+
+.user-menu-link:hover,
+.user-menu-link:focus {
+    color: var(--text-primary, #111827);
+    background: var(--bg-secondary, #f9fafb);
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        display: flex;
+    }
+    
+    .nav-menu {
+        display: none;
+    }
+    
+    .brand-text {
+        display: none;
+    }
+    
+    .mobile-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-primary, #ffffff);
+        border-top: 1px solid var(--border-light, #e5e7eb);
+        box-shadow: var(--shadow-lg);
+        z-index: var(--z-dropdown, 1010);
+    }
+    
+    .mobile-menu.hidden {
+        display: none;
+    }
+    
+    .mobile-menu-content {
+        padding: var(--space-4, 1rem);
+    }
+    
+    .mobile-search {
+        margin-bottom: var(--space-4, 1rem);
+    }
+    
+    .mobile-search .search-input {
+        width: 100%;
+    }
+    
+    .mobile-nav-links {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 0.25rem);
+    }
+    
+    .mobile-nav-link {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3, 0.75rem);
+        padding: var(--space-3, 0.75rem);
+        color: var(--text-secondary, #6b7280);
+        text-decoration: none;
+        font-weight: var(--font-medium, 500);
+        border-radius: var(--radius-lg, 0.5rem);
+        transition: all var(--duration-150, 150ms) var(--ease-out);
+    }
+    
+    .mobile-nav-link:hover {
+        color: var(--text-primary, #111827);
+        background: var(--bg-secondary, #f9fafb);
+    }
+    
+    .mobile-crisis {
+        margin-top: var(--space-6, 1.5rem);
+        padding-top: var(--space-4, 1rem);
+        border-top: 1px solid var(--border-light, #e5e7eb);
+    }
+    
+    .mobile-crisis h3 {
+        font-size: var(--text-sm, 0.875rem);
+        font-weight: var(--font-semibold, 600);
+        color: var(--text-primary, #111827);
+        margin-bottom: var(--space-2, 0.5rem);
+    }
+    
+    .mobile-crisis-button {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2, 0.5rem);
+        width: 100%;
+        padding: var(--space-3, 0.75rem);
+        margin-bottom: var(--space-2, 0.5rem);
+        background: var(--crisis-color, #dc2626);
+        color: white;
+        text-decoration: none;
+        font-weight: var(--font-semibold, 600);
+        border-radius: var(--radius-lg, 0.5rem);
+        transition: background-color var(--duration-150, 150ms) var(--ease-out);
+        justify-content: center;
+    }
+    
+    .mobile-crisis-button:hover {
+        background: #b91c1c;
+    }
+    
+    .mobile-crisis-button.emergency {
+        background: #7f1d1d;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .main-nav {
+        display: none !important;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .nav-link:hover,
+    .nav-link:focus {
+        background: #000000;
+        color: #ffffff;
+    }
+    
+    .dropdown-menu,
+    .user-menu {
+        border: 2px solid #000000;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .nav-link,
+    .dropdown-menu,
+    .user-menu,
+    .hamburger-line {
+        transition: none;
+    }
+    
+    .dropdown-menu,
+    .user-menu {
+        transform: none;
+    }
+}
+</style>
+
+<script>
+// Navigation JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Mobile menu toggle
+    const mobileToggle = document.querySelector('.mobile-menu-toggle');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    
+    if (mobileToggle && mobileMenu) {
+        mobileToggle.addEventListener('click', function() {
+            const isExpanded = mobileToggle.getAttribute('aria-expanded') === 'true';
+            mobileToggle.setAttribute('aria-expanded', !isExpanded);
+            mobileMenu.classList.toggle('hidden');
+            
+            // Focus management
+            if (!isExpanded) {
+                const firstLink = mobileMenu.querySelector('a, button');
+                if (firstLink) {
+                    firstLink.focus();
+                }
+            }
+        });
+    }
+    
+    // Dropdown toggles
+    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+            
+            // Close all other dropdowns
+            dropdownToggles.forEach(otherToggle => {
+                if (otherToggle !== toggle) {
+                    otherToggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+            
+            toggle.setAttribute('aria-expanded', !isExpanded);
+        });
+    });
+    
+    // User menu toggle
+    const userToggle = document.querySelector('.user-menu-toggle');
+    if (userToggle) {
+        userToggle.addEventListener('click', function() {
+            const isExpanded = userToggle.getAttribute('aria-expanded') === 'true';
+            userToggle.setAttribute('aria-expanded', !isExpanded);
+        });
+    }
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown') && !e.target.closest('.nav-user')) {
+            dropdownToggles.forEach(toggle => {
+                toggle.setAttribute('aria-expanded', 'false');
+            });
+            
+            if (userToggle) {
+                userToggle.setAttribute('aria-expanded', 'false');
+            }
+        }
+    });
+    
+    // Search functionality
+    const searchInput = document.querySelector('#search-input');
+    const searchSuggestions = document.querySelector('#search-suggestions');
+    
+    if (searchInput) {
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length > 2) {
+                searchTimeout = setTimeout(() => {
+                    fetchSearchSuggestions(query);
+                }, 300);
+            } else {
+                hideSuggestions();
+            }
+        });
+        
+        // Handle search form submission
+        searchInput.closest('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const query = searchInput.value.trim();
+            if (query) {
+                window.location.href = `/search?q=${encodeURIComponent(query)}`;
+            }
+        });
+    }
+    
+    function fetchSearchSuggestions(query) {
+        // Mock search suggestions - replace with actual API call
+        const suggestions = [
+            'Mental health treatment',
+            'Substance abuse counseling', 
+            'Depression therapy',
+            'Anxiety treatment',
+            'Addiction recovery'
+        ].filter(item => item.toLowerCase().includes(query.toLowerCase()));
+        
+        displaySuggestions(suggestions);
+    }
+    
+    function displaySuggestions(suggestions) {
+        if (!searchSuggestions) return;
+        
+        if (suggestions.length > 0) {
+            searchSuggestions.innerHTML = suggestions.map(suggestion => 
+                `<div class="search-suggestion" role="option">${suggestion}</div>`
+            ).join('');
+            searchSuggestions.style.display = 'block';
+            
+            // Add click handlers to suggestions
+            searchSuggestions.querySelectorAll('.search-suggestion').forEach(item => {
+                item.addEventListener('click', function() {
+                    searchInput.value = this.textContent;
+                    hideSuggestions();
+                    searchInput.closest('form').dispatchEvent(new Event('submit'));
+                });
+            });
+        } else {
+            hideSuggestions();
+        }
+    }
+    
+    function hideSuggestions() {
+        if (searchSuggestions) {
+            searchSuggestions.style.display = 'none';
+        }
+    }
+    
+    // Active navigation state
+    function setActiveNav() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link[href]');
+        
+        navLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href === currentPath || (href !== '/' && currentPath.startsWith(href))) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    }
+    
+    setActiveNav();
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        // ESC closes dropdowns
+        if (e.key === 'Escape') {
+            dropdownToggles.forEach(toggle => {
+                toggle.setAttribute('aria-expanded', 'false');
+            });
+            
+            if (userToggle) {
+                userToggle.setAttribute('aria-expanded', 'false');
+            }
+            
+            if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                mobileToggle.setAttribute('aria-expanded', 'false');
+                mobileMenu.classList.add('hidden');
+            }
+            
+            hideSuggestions();
+        }
+    });
+});
+</script> 

@@ -1,1 +1,0 @@
-# This file makes Python treat the directory scholarship_chat_app as a package. œ

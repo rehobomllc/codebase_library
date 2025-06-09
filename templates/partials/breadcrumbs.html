@@ -1,0 +1,281 @@
+<!-- Breadcrumb Navigation -->
+<nav class="breadcrumb-nav" role="navigation" aria-label="Breadcrumb navigation">
+    <div class="container">
+        <ol class="breadcrumb-list" itemscope itemtype="https://schema.org/BreadcrumbList">
+            <li class="breadcrumb-item" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                <a href="/" class="breadcrumb-link" itemprop="item" aria-label="Go to homepage">
+                    <i class="fas fa-home" aria-hidden="true"></i>
+                    <span itemprop="name">Home</span>
+                </a>
+                <meta itemprop="position" content="1">
+            </li>
+            
+            {% if breadcrumbs %}
+                {% for crumb in breadcrumbs %}
+                <li class="breadcrumb-separator" aria-hidden="true">
+                    <i class="fas fa-chevron-right"></i>
+                </li>
+                <li class="breadcrumb-item{% if loop.last %} current{% endif %}" 
+                    itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    {% if crumb.url and not loop.last %}
+                        <a href="{{ crumb.url }}" class="breadcrumb-link" itemprop="item">
+                            {% if crumb.icon %}
+                                <i class="{{ crumb.icon }}" aria-hidden="true"></i>
+                            {% endif %}
+                            <span itemprop="name">{{ crumb.name }}</span>
+                        </a>
+                    {% else %}
+                        <span class="breadcrumb-current" itemprop="item" aria-current="page">
+                            {% if crumb.icon %}
+                                <i class="{{ crumb.icon }}" aria-hidden="true"></i>
+                            {% endif %}
+                            <span itemprop="name">{{ crumb.name }}</span>
+                        </span>
+                    {% endif %}
+                    <meta itemprop="position" content="{{ loop.index + 1 }}">
+                </li>
+                {% endfor %}
+            {% endif %}
+        </ol>
+    </div>
+</nav>
+
+<style>
+/* Breadcrumb Navigation Styles */
+.breadcrumb-nav {
+    background: var(--bg-tertiary, #f3f4f6);
+    border-bottom: 1px solid var(--border-light, #e5e7eb);
+    padding: var(--space-3, 0.75rem) 0;
+    font-size: var(--text-sm, 0.875rem);
+}
+
+.breadcrumb-list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    color: var(--text-secondary, #6b7280);
+    text-decoration: none;
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-radius: var(--radius-md, 0.375rem);
+    transition: all var(--duration-150, 150ms) var(--ease-out);
+    font-weight: var(--font-medium, 500);
+}
+
+.breadcrumb-link:hover,
+.breadcrumb-link:focus {
+    color: var(--primary-color, #2563eb);
+    background: var(--primary-50, #eff6ff);
+    text-decoration: underline;
+}
+
+.breadcrumb-current {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    color: var(--text-primary, #111827);
+    font-weight: var(--font-semibold, 600);
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+}
+
+.breadcrumb-separator {
+    color: var(--text-muted, #9ca3af);
+    font-size: var(--text-xs, 0.75rem);
+    user-select: none;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .breadcrumb-nav {
+        padding: var(--space-2, 0.5rem) 0;
+    }
+    
+    .breadcrumb-list {
+        gap: var(--space-1, 0.25rem);
+    }
+    
+    .breadcrumb-link,
+    .breadcrumb-current {
+        padding: var(--space-1, 0.25rem);
+        font-size: var(--text-xs, 0.75rem);
+    }
+    
+    /* Hide intermediate breadcrumbs on very small screens */
+    .breadcrumb-item:not(:first-child):not(:last-child):not(.current) {
+        display: none;
+    }
+    
+    /* Show ellipsis if items are hidden */
+    .breadcrumb-item:first-child:not(:nth-last-child(2))::after {
+        content: "...";
+        color: var(--text-muted, #9ca3af);
+        margin: 0 var(--space-1, 0.25rem);
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .breadcrumb-link:hover,
+    .breadcrumb-link:focus {
+        background: #000000;
+        color: #ffffff;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .breadcrumb-nav {
+        display: none;
+    }
+}
+
+/* Focus Management */
+.breadcrumb-link:focus {
+    outline: 2px solid var(--primary-color, #2563eb);
+    outline-offset: 2px;
+}
+
+/* Loading State */
+.breadcrumb-nav.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.breadcrumb-nav.loading .breadcrumb-link {
+    cursor: wait;
+}
+</style>
+
+<script>
+// Breadcrumb JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Track breadcrumb clicks for analytics
+    const breadcrumbLinks = document.querySelectorAll('.breadcrumb-link');
+    
+    breadcrumbLinks.forEach((link, index) => {
+        link.addEventListener('click', function(e) {
+            const breadcrumbText = this.querySelector('span[itemprop="name"]')?.textContent || '';
+            const breadcrumbUrl = this.getAttribute('href') || '';
+            
+            // Log breadcrumb navigation
+            console.log('Breadcrumb clicked:', breadcrumbText, breadcrumbUrl);
+            
+            // Send analytics event if tracking is available
+            if (typeof gtag === 'function') {
+                gtag('event', 'breadcrumb_navigation', {
+                    'event_category': 'Navigation',
+                    'event_label': breadcrumbText,
+                    'event_position': index + 1
+                });
+            }
+            
+            // Track in backend if function available
+            if (typeof trackEvent === 'function') {
+                trackEvent('breadcrumb_clicked', {
+                    breadcrumb_text: breadcrumbText,
+                    breadcrumb_url: breadcrumbUrl,
+                    position: index + 1,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+    });
+    
+    // Auto-generate breadcrumbs from URL if not provided
+    function generateBreadcrumbs() {
+        const path = window.location.pathname;
+        const segments = path.split('/').filter(segment => segment);
+        
+        if (segments.length === 0) return; // Homepage
+        
+        const breadcrumbNav = document.querySelector('.breadcrumb-nav');
+        const breadcrumbList = document.querySelector('.breadcrumb-list');
+        
+        if (!breadcrumbNav || !breadcrumbList) return;
+        
+        // Check if breadcrumbs are already manually set
+        const existingCrumbs = breadcrumbList.querySelectorAll('.breadcrumb-item:not(:first-child)');
+        if (existingCrumbs.length > 0) return; // Don't auto-generate if manually set
+        
+        // Generate breadcrumbs from URL
+        let currentPath = '';
+        
+        segments.forEach((segment, index) => {
+            currentPath += '/' + segment;
+            const isLast = index === segments.length - 1;
+            
+            // Create separator
+            const separator = document.createElement('li');
+            separator.className = 'breadcrumb-separator';
+            separator.setAttribute('aria-hidden', 'true');
+            separator.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            breadcrumbList.appendChild(separator);
+            
+            // Create breadcrumb item
+            const breadcrumbItem = document.createElement('li');
+            breadcrumbItem.className = `breadcrumb-item${isLast ? ' current' : ''}`;
+            breadcrumbItem.setAttribute('itemprop', 'itemListElement');
+            breadcrumbItem.setAttribute('itemscope', '');
+            breadcrumbItem.setAttribute('itemtype', 'https://schema.org/ListItem');
+            
+            const displayName = formatSegmentName(segment);
+            
+            if (isLast) {
+                breadcrumbItem.innerHTML = `
+                    <span class="breadcrumb-current" itemprop="item" aria-current="page">
+                        <span itemprop="name">${displayName}</span>
+                    </span>
+                    <meta itemprop="position" content="${index + 2}">
+                `;
+            } else {
+                breadcrumbItem.innerHTML = `
+                    <a href="${currentPath}" class="breadcrumb-link" itemprop="item">
+                        <span itemprop="name">${displayName}</span>
+                    </a>
+                    <meta itemprop="position" content="${index + 2}">
+                `;
+            }
+            
+            breadcrumbList.appendChild(breadcrumbItem);
+        });
+    }
+    
+    function formatSegmentName(segment) {
+        // Convert URL segment to readable name
+        return segment
+            .replace(/-/g, ' ')
+            .replace(/_/g, ' ')
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    }
+    
+    // Auto-generate breadcrumbs if needed
+    generateBreadcrumbs();
+    
+    // Keyboard navigation for breadcrumbs
+    document.addEventListener('keydown', function(e) {
+        if (e.altKey && e.key === 'b') {
+            e.preventDefault();
+            const firstBreadcrumb = document.querySelector('.breadcrumb-link');
+            if (firstBreadcrumb) {
+                firstBreadcrumb.focus();
+            }
+        }
+    });
+});
+</script> 

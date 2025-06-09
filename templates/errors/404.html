@@ -1,0 +1,613 @@
+{% extends "partials/layout.html" %}
+
+{% block title %}Page Not Found{% endblock %}
+{% block description %}The page you're looking for couldn't be found. Find treatment resources and get help with our treatment navigator.{% endblock %}
+{% block page_css %}errors{% endblock %}
+
+{% block body_class %}error-page error-404{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <!-- Error Illustration -->
+        <div class="error-illustration">
+            <div class="error-icon">
+                <i class="fas fa-compass" aria-hidden="true"></i>
+            </div>
+            <div class="error-waves">
+                <div class="wave wave-1"></div>
+                <div class="wave wave-2"></div>
+                <div class="wave wave-3"></div>
+            </div>
+        </div>
+        
+        <!-- Error Message -->
+        <div class="error-message">
+            <h1 class="error-title">Page Not Found</h1>
+            <p class="error-subtitle">
+                We couldn't find the page you're looking for. 
+                Don't worry - we're here to help you find the care you need.
+            </p>
+            
+            <!-- Search Bar -->
+            <div class="error-search">
+                <form class="search-form" role="search" aria-label="Search for treatment" action="/search" method="GET">
+                    <div class="search-input-group">
+                        <input type="search" 
+                               name="q" 
+                               class="search-input" 
+                               placeholder="Search for treatment options..." 
+                               aria-label="Search for treatment options"
+                               value="{{ request.args.get('q', '') if request else '' }}">
+                        <button type="submit" class="search-button" aria-label="Search">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="error-actions">
+            <div class="action-grid">
+                <a href="/" class="action-card primary">
+                    <div class="action-icon">
+                        <i class="fas fa-home" aria-hidden="true"></i>
+                    </div>
+                    <h3>Go Home</h3>
+                    <p>Return to the main page</p>
+                </a>
+                
+                <a href="/treatment-search" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                    </div>
+                    <h3>Find Treatment</h3>
+                    <p>Search for treatment options</p>
+                </a>
+                
+                <a href="/vision-test" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-camera" aria-hidden="true"></i>
+                    </div>
+                    <h3>Vision Analysis</h3>
+                    <p>Analyze medical documents</p>
+                </a>
+                
+                <a href="/help" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-question-circle" aria-hidden="true"></i>
+                    </div>
+                    <h3>Get Help</h3>
+                    <p>Access support resources</p>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Crisis Support -->
+        <div class="error-crisis">
+            <div class="crisis-card">
+                <h3><i class="fas fa-heart" aria-hidden="true"></i> Need Immediate Help?</h3>
+                <p>If you're in crisis, help is available 24/7.</p>
+                <div class="crisis-actions">
+                    <a href="tel:988" class="crisis-button">
+                        <i class="fas fa-phone" aria-hidden="true"></i>
+                        Call 988 - Crisis Lifeline
+                    </a>
+                    <a href="tel:911" class="crisis-button emergency">
+                        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                        Call 911 - Emergency
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Common Links -->
+        <div class="error-links">
+            <h3>Popular Pages</h3>
+            <ul class="link-list">
+                <li><a href="/mental-health">Mental Health Treatment</a></li>
+                <li><a href="/substance-use">Substance Use Treatment</a></li>
+                <li><a href="/insurance-verification">Insurance Verification</a></li>
+                <li><a href="/treatment-onboarding">Treatment Onboarding</a></li>
+                <li><a href="/crisis-resources">Crisis Resources</a></li>
+                <li><a href="/provider-directory">Provider Directory</a></li>
+            </ul>
+        </div>
+        
+        <!-- Report Problem -->
+        <div class="error-report">
+            <p class="report-text">
+                Broken link? 
+                <a href="/feedback?subject=404 Error&url={{ request.url if request else '' }}" class="report-link">
+                    Let us know
+                </a>
+                so we can fix it.
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 404 Error Page Styles */
+.error-container {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8, 2rem) 0;
+    background: linear-gradient(135deg, var(--bg-secondary, #f9fafb) 0%, var(--bg-tertiary, #f3f4f6) 100%);
+}
+
+.error-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 var(--space-4, 1rem);
+    text-align: center;
+}
+
+/* Error Illustration */
+.error-illustration {
+    position: relative;
+    margin-bottom: var(--space-8, 2rem);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+}
+
+.error-icon {
+    position: relative;
+    z-index: 2;
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, var(--primary-color, #2563eb), var(--secondary-color, #10b981));
+    border-radius: var(--radius-full, 9999px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+    box-shadow: var(--shadow-xl);
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.error-waves {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.wave {
+    position: absolute;
+    border: 2px solid var(--primary-color, #2563eb);
+    border-radius: var(--radius-full, 9999px);
+    opacity: 0.3;
+    animation: ripple 2s linear infinite;
+}
+
+.wave-1 {
+    width: 150px;
+    height: 150px;
+    animation-delay: 0s;
+}
+
+.wave-2 {
+    width: 200px;
+    height: 200px;
+    animation-delay: 0.5s;
+}
+
+.wave-3 {
+    width: 250px;
+    height: 250px;
+    animation-delay: 1s;
+}
+
+@keyframes ripple {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.6;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
+    }
+}
+
+/* Error Message */
+.error-message {
+    margin-bottom: var(--space-8, 2rem);
+}
+
+.error-title {
+    font-size: var(--text-4xl, 2.25rem);
+    font-weight: var(--font-bold, 700);
+    color: var(--text-primary, #111827);
+    margin-bottom: var(--space-4, 1rem);
+}
+
+.error-subtitle {
+    font-size: var(--text-lg, 1.125rem);
+    color: var(--text-secondary, #6b7280);
+    line-height: var(--leading-relaxed, 1.625);
+    margin-bottom: var(--space-6, 1.5rem);
+}
+
+/* Search Bar */
+.error-search {
+    max-width: 400px;
+    margin: 0 auto var(--space-8, 2rem);
+}
+
+.search-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-input {
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-12, 3rem) var(--space-3, 0.75rem) var(--space-4, 1rem);
+    border: 2px solid var(--border-light, #e5e7eb);
+    border-radius: var(--radius-xl, 0.75rem);
+    font-size: var(--text-base, 1rem);
+    background: white;
+    transition: all var(--duration-200, 200ms) var(--ease-out);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary-color, #2563eb);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.search-button {
+    position: absolute;
+    right: var(--space-2, 0.5rem);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--primary-color, #2563eb);
+    color: white;
+    border: none;
+    padding: var(--space-2, 0.5rem);
+    border-radius: var(--radius-lg, 0.5rem);
+    cursor: pointer;
+    transition: all var(--duration-150, 150ms) var(--ease-out);
+}
+
+.search-button:hover {
+    background: var(--primary-dark, #1d4ed8);
+    transform: translateY(-50%) scale(1.05);
+}
+
+/* Action Cards */
+.error-actions {
+    margin-bottom: var(--space-8, 2rem);
+}
+
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-4, 1rem);
+    margin-bottom: var(--space-6, 1.5rem);
+}
+
+.action-card {
+    background: white;
+    border: 1px solid var(--border-light, #e5e7eb);
+    border-radius: var(--radius-xl, 0.75rem);
+    padding: var(--space-6, 1.5rem);
+    text-decoration: none;
+    color: var(--text-primary, #111827);
+    transition: all var(--duration-200, 200ms) var(--ease-out);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color, #2563eb);
+}
+
+.action-card.primary {
+    background: var(--primary-color, #2563eb);
+    color: white;
+    border-color: var(--primary-color, #2563eb);
+}
+
+.action-card.primary:hover {
+    background: var(--primary-dark, #1d4ed8);
+}
+
+.action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full, 9999px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-3, 0.75rem);
+    font-size: var(--text-xl, 1.25rem);
+    background: var(--primary-50, #eff6ff);
+    color: var(--primary-color, #2563eb);
+}
+
+.action-card.primary .action-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.action-card h3 {
+    font-size: var(--text-base, 1rem);
+    font-weight: var(--font-semibold, 600);
+    margin: 0 0 var(--space-1, 0.25rem) 0;
+}
+
+.action-card p {
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--text-secondary, #6b7280);
+    margin: 0;
+}
+
+.action-card.primary p {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Crisis Support */
+.error-crisis {
+    margin-bottom: var(--space-8, 2rem);
+}
+
+.crisis-card {
+    background: linear-gradient(135deg, var(--crisis-color, #dc2626), #ef4444);
+    color: white;
+    border-radius: var(--radius-xl, 0.75rem);
+    padding: var(--space-6, 1.5rem);
+    text-align: center;
+}
+
+.crisis-card h3 {
+    font-size: var(--text-lg, 1.125rem);
+    font-weight: var(--font-semibold, 600);
+    margin: 0 0 var(--space-2, 0.5rem) 0;
+}
+
+.crisis-card p {
+    margin: 0 0 var(--space-4, 1rem) 0;
+    opacity: 0.9;
+}
+
+.crisis-actions {
+    display: flex;
+    gap: var(--space-3, 0.75rem);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.crisis-button {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    border-radius: var(--radius-lg, 0.5rem);
+    text-decoration: none;
+    font-weight: var(--font-semibold, 600);
+    font-size: var(--text-sm, 0.875rem);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    transition: all var(--duration-150, 150ms) var(--ease-out);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.crisis-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.crisis-button.emergency {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Common Links */
+.error-links {
+    margin-bottom: var(--space-6, 1.5rem);
+    text-align: left;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.error-links h3 {
+    font-size: var(--text-lg, 1.125rem);
+    font-weight: var(--font-semibold, 600);
+    color: var(--text-primary, #111827);
+    margin: 0 0 var(--space-3, 0.75rem) 0;
+    text-align: center;
+}
+
+.link-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2, 0.5rem);
+}
+
+.link-list a {
+    color: var(--primary-color, #2563eb);
+    text-decoration: none;
+    font-size: var(--text-sm, 0.875rem);
+    padding: var(--space-1, 0.25rem);
+    border-radius: var(--radius-md, 0.375rem);
+    transition: all var(--duration-150, 150ms) var(--ease-out);
+}
+
+.link-list a:hover {
+    background: var(--primary-50, #eff6ff);
+    color: var(--primary-dark, #1d4ed8);
+}
+
+/* Report Problem */
+.error-report {
+    border-top: 1px solid var(--border-light, #e5e7eb);
+    padding-top: var(--space-4, 1rem);
+}
+
+.report-text {
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--text-secondary, #6b7280);
+    margin: 0;
+}
+
+.report-link {
+    color: var(--primary-color, #2563eb);
+    text-decoration: none;
+    font-weight: var(--font-medium, 500);
+}
+
+.report-link:hover {
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .error-title {
+        font-size: var(--text-3xl, 1.875rem);
+    }
+    
+    .error-subtitle {
+        font-size: var(--text-base, 1rem);
+    }
+    
+    .action-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: var(--space-3, 0.75rem);
+    }
+    
+    .action-card {
+        padding: var(--space-4, 1rem);
+    }
+    
+    .crisis-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .crisis-button {
+        width: 100%;
+        max-width: 200px;
+        justify-content: center;
+    }
+    
+    .link-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .error-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+    }
+    
+    .wave-1 { width: 100px; height: 100px; }
+    .wave-2 { width: 130px; height: 130px; }
+    .wave-3 { width: 160px; height: 160px; }
+    
+    .action-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .error-illustration,
+    .error-search,
+    .crisis-card {
+        display: none;
+    }
+    
+    .error-container {
+        background: white;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .action-card:hover {
+        background: #000000;
+        color: #ffffff;
+    }
+    
+    .link-list a:hover {
+        background: #000000;
+        color: #ffffff;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .error-icon,
+    .wave,
+    .action-card {
+        animation: none;
+        transition: none;
+    }
+    
+    .action-card:hover,
+    .crisis-button:hover {
+        transform: none;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Track 404 errors for analytics
+    if (typeof gtag === 'function') {
+        gtag('event', 'page_not_found', {
+            'event_category': 'Error',
+            'event_label': window.location.pathname,
+            'value': 1
+        });
+    }
+    
+    // Auto-focus search input for better UX
+    const searchInput = document.querySelector('.error-search .search-input');
+    if (searchInput) {
+        setTimeout(() => {
+            searchInput.focus();
+        }, 500);
+    }
+    
+    // Track action card clicks
+    const actionCards = document.querySelectorAll('.action-card');
+    actionCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const cardTitle = this.querySelector('h3')?.textContent || 'Unknown';
+            
+            if (typeof gtag === 'function') {
+                gtag('event', '404_action_click', {
+                    'event_category': 'Recovery',
+                    'event_label': cardTitle
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

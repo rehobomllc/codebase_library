@@ -1,0 +1,431 @@
+/* Vision Analysis Interface Styles */
+
+/* Root Variables */
+:root {
+    --vision-primary: #3498db;
+    --vision-primary-dark: #2980b9;
+    --vision-neutral: #bdc3c7;
+    --vision-success: #d4edda;
+    --vision-success-border: #c3e6cb;
+    --vision-success-text: #155724;
+    --vision-error: #f8d7da;
+    --vision-error-border: #f5c6cb;
+    --vision-error-text: #721c24;
+    --vision-background: #f5f5f5;
+    --vision-surface: #ffffff;
+    --vision-text-primary: #2c3e50;
+    --vision-text-secondary: #7f8c8d;
+    --vision-text-light: #666666;
+    --vision-border: #e0e0e0;
+    --vision-border-light: #ddd;
+    --vision-code-bg: #2c3e50;
+    --vision-code-text: #ecf0f1;
+}
+
+/* Base Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: var(--vision-background);
+    line-height: 1.6;
+}
+
+/* Layout */
+.container {
+    background: var(--vision-surface);
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Typography */
+h1 {
+    color: var(--vision-text-primary);
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.subtitle {
+    text-align: center;
+    color: var(--vision-text-secondary);
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+}
+
+h2 {
+    color: #34495e;
+    margin-top: 0;
+    border-bottom: 2px solid var(--vision-primary);
+    padding-bottom: 10px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+/* Analysis Sections */
+.analysis-section {
+    margin-bottom: 40px;
+    padding: 25px;
+    border: 1px solid var(--vision-border);
+    border-radius: 8px;
+    background-color: #fafafa;
+    transition: box-shadow 0.3s ease;
+}
+
+.analysis-section:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--vision-text-primary);
+    font-size: 0.95rem;
+}
+
+input[type="text"], 
+input[type="file"], 
+select, 
+textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--vision-border-light);
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    font-family: inherit;
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--vision-primary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+textarea {
+    height: 80px;
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* Buttons */
+button {
+    background-color: var(--vision-primary);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+button:hover {
+    background-color: var(--vision-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+button:disabled {
+    background-color: var(--vision-neutral);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Results */
+.results {
+    margin-top: 25px;
+    padding: 20px;
+    border-radius: 6px;
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.results.success {
+    background-color: var(--vision-success);
+    border: 1px solid var(--vision-success-border);
+    color: var(--vision-success-text);
+}
+
+.results.error {
+    background-color: var(--vision-error);
+    border: 1px solid var(--vision-error-border);
+    color: var(--vision-error-text);
+}
+
+/* Loading States */
+.loading {
+    text-align: center;
+    padding: 20px;
+    display: none;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--vision-primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading p {
+    color: var(--vision-text-secondary);
+    font-weight: 500;
+}
+
+/* JSON Display */
+.json-display {
+    background-color: var(--vision-code-bg);
+    color: var(--vision-code-text);
+    padding: 15px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+    font-family: 'Monaco', 'Consolas', 'SF Mono', monospace;
+    font-size: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 10px;
+    border: 1px solid #34495e;
+    line-height: 1.4;
+}
+
+.json-display::-webkit-scrollbar {
+    width: 8px;
+}
+
+.json-display::-webkit-scrollbar-track {
+    background: #34495e;
+}
+
+.json-display::-webkit-scrollbar-thumb {
+    background: #52708a;
+    border-radius: 4px;
+}
+
+/* File Info */
+.file-info {
+    font-size: 12px;
+    color: var(--vision-text-light);
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* Navigation */
+.vision-nav {
+    background: var(--vision-surface);
+    padding: 15px 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--vision-border);
+}
+
+.nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.nav-home {
+    color: var(--vision-primary);
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.3s ease;
+}
+
+.nav-home:hover {
+    color: var(--vision-primary-dark);
+}
+
+/* Accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Error States */
+.error-message {
+    background-color: var(--vision-error);
+    border: 1px solid var(--vision-error-border);
+    color: var(--vision-error-text);
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.error-message::before {
+    content: "⚠️";
+    font-size: 1.2em;
+}
+
+/* Success States */
+.success-message {
+    background-color: var(--vision-success);
+    border: 1px solid var(--vision-success-border);
+    color: var(--vision-success-text);
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.success-message::before {
+    content: "✅";
+    font-size: 1.2em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        padding: 20px;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .analysis-section {
+        padding: 20px;
+    }
+    
+    button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .nav-content {
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 15px;
+    }
+    
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .analysis-section {
+        padding: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .json-display {
+        font-size: 11px;
+        max-height: 300px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+    
+    .container {
+        box-shadow: none;
+        padding: 20px;
+    }
+    
+    .analysis-section {
+        page-break-inside: avoid;
+        background: white !important;
+        border: 1px solid #ccc;
+    }
+    
+    button,
+    .loading,
+    .nav-content {
+        display: none;
+    }
+    
+    .results {
+        display: block !important;
+    }
+}
+
+/* Focus Management */
+.focus-trap {
+    outline: 2px solid var(--vision-primary);
+    outline-offset: 2px;
+}
+
+/* Animation Preferences */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    :root {
+        --vision-primary: #0066cc;
+        --vision-text-primary: #000000;
+        --vision-background: #ffffff;
+        --vision-border: #000000;
+    }
+} 

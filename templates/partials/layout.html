@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="msapplication-TileColor" content="#2563eb">
+    
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    
+    <!-- Page Title -->
+    <title>{% block title %}Treatment Navigator{% endblock %} - Compassionate Healthcare Support</title>
+    
+    <!-- Meta Description -->
+    <meta name="description" content="{% block description %}Find mental health and substance use treatment with compassionate AI-powered guidance. Available 24/7 with crisis support and insurance verification.{% endblock %}">
+    
+    <!-- Keywords -->
+    <meta name="keywords" content="mental health treatment, substance abuse treatment, healthcare navigator, crisis support, insurance verification, treatment finder">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url if request else 'https://treatmentnavigator.com' }}">
+    <meta property="og:title" content="{% block og_title %}Treatment Navigator - Find Compassionate Healthcare{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}AI-powered treatment finder for mental health and substance use support. Get help 24/7.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}/static/images/og-image.jpg{% endblock %}">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:site_name" content="Treatment Navigator">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.url if request else 'https://treatmentnavigator.com' }}">
+    <meta property="twitter:title" content="{% block twitter_title %}Treatment Navigator - Compassionate Healthcare Support{% endblock %}">
+    <meta property="twitter:description" content="{% block twitter_description %}Find mental health and substance use treatment with AI guidance. Crisis support available 24/7.{% endblock %}">
+    <meta property="twitter:image" content="{% block twitter_image %}/static/images/twitter-image.jpg{% endblock %}">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "HealthAndBeautyBusiness",
+        "name": "Treatment Navigator",
+        "description": "AI-powered treatment finder for mental health and substance use support",
+        "url": "{{ request.url if request else 'https://treatmentnavigator.com' }}",
+        "sameAs": [],
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "{{ request.url if request else 'https://treatmentnavigator.com' }}/search?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        },
+        "areaServed": "United States",
+        "priceRange": "Free",
+        "telephone": "988",
+        "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": "Treatment Services",
+            "itemListElement": [
+                {
+                    "@type": "Offer",
+                    "itemOffered": {
+                        "@type": "MedicalTherapy",
+                        "name": "Mental Health Treatment Navigation"
+                    }
+                },
+                {
+                    "@type": "Offer", 
+                    "itemOffered": {
+                        "@type": "MedicalTherapy",
+                        "name": "Substance Use Treatment Navigation"
+                    }
+                }
+            ]
+        }
+    }
+    </script>
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ request.url if request else 'https://treatmentnavigator.com' }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/apple-touch-icon.png">
+    <link rel="manifest" href="/static/manifest.json">
+    
+    <!-- Fonts and External Resources -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Core Stylesheets -->
+    <link href="/static/css/common.css" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Page-specific CSS -->
+    {% if page_css %}
+        <link href="/static/css/{{ page_css }}.css" rel="stylesheet">
+    {% endif %}
+    
+    <!-- Custom CSS Block -->
+    {% block custom_css %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <!-- Skip Navigation for Accessibility -->
+    <a href="#main-content" class="skip-nav">Skip to main content</a>
+    
+    <!-- CSRF Token (for future use) -->
+    <meta name="csrf-token" content="{% block csrf_token %}{% endblock %}">
+    
+    <!-- Crisis Support Banner -->
+    {% include 'partials/crisis_banner.html' %}
+    
+    <!-- Main Navigation -->
+    {% include 'partials/navigation.html' %}
+    
+    <!-- Breadcrumb Navigation -->
+    {% if show_breadcrumbs %}
+        {% include 'partials/breadcrumbs.html' %}
+    {% endif %}
+    
+    <!-- Main Content Area -->
+    <main id="main-content" class="main-content" role="main" aria-label="Main content">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Global Notifications -->
+    <div id="global-notifications" class="fixed top-4 right-4 z-50 space-y-2" aria-live="polite" aria-atomic="true"></div>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden" role="status" aria-label="Loading">
+        <div class="loading-content">
+            <div class="spinner animate-spin" aria-hidden="true"></div>
+            <p class="loading-text">Processing your request...</p>
+        </div>
+    </div>
+    
+    <!-- Modal Container -->
+    <div id="modal-container" class="modal-container hidden" role="dialog" aria-modal="true"></div>
+    
+    <!-- Site Footer -->
+    {% include 'partials/footer.html' %}
+    
+    <!-- Core JavaScript -->
+    <script src="/static/js/common.js"></script>
+    
+    <!-- Page-specific JavaScript -->
+    {% if page_js %}
+        <script src="/static/js/{{ page_js }}.js"></script>
+    {% endif %}
+    
+    <!-- Custom JavaScript Block -->
+    {% block custom_js %}{% endblock %}
+    
+    <!-- Analytics and Tracking -->
+    {% block analytics %}
+    <!-- Add your analytics code here -->
+    {% endblock %}
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js')
+                .then(registration => console.log('SW registered'))
+                .catch(error => console.log('SW registration failed'));
+        }
+    </script>
+    
+    <!-- Session Timeout Handler for Healthcare Compliance -->
+    <script>
+        (function() {
+            let sessionTimeout;
+            const TIMEOUT_DURATION = 30 * 60 * 1000; // 30 minutes for healthcare data security
+            
+            function resetSessionTimer() {
+                clearTimeout(sessionTimeout);
+                sessionTimeout = setTimeout(() => {
+                    if (confirm('Your session will expire soon for security. Continue working?')) {
+                        resetSessionTimer();
+                    } else {
+                        // Clear sensitive data and redirect
+                        localStorage.removeItem('treatment_navigator_user_id');
+                        sessionStorage.clear();
+                        window.location.href = '/';
+                    }
+                }, TIMEOUT_DURATION);
+            }
+            
+            // Reset timer on user activity
+            ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+                document.addEventListener(event, resetSessionTimer, true);
+            });
+            
+            resetSessionTimer();
+        })();
+    </script>
+    
+    <!-- Error Tracking -->
+    <script>
+        window.addEventListener('error', function(e) {
+            // Log JavaScript errors for debugging
+            console.error('JS Error:', e.error);
+            
+            // Send to backend for logging (optional)
+            if (typeof logError === 'function') {
+                logError(e.error);
+            }
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled Promise Rejection:', e.reason);
+            
+            if (typeof logError === 'function') {
+                logError(e.reason);
+            }
+        });
+    </script>
+    
+    <!-- Accessibility Enhancements -->
+    <script>
+        // Enhanced keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            // ESC key closes modals
+            if (e.key === 'Escape') {
+                const modal = document.querySelector('.modal-container:not(.hidden)');
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+            }
+            
+            // Alt + S focuses search
+            if (e.altKey && e.key === 's') {
+                e.preventDefault();
+                const searchInput = document.querySelector('#search-input, #user-message');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+            
+            // Alt + H goes to home
+            if (e.altKey && e.key === 'h') {
+                e.preventDefault();
+                window.location.href = '/';
+            }
+        });
+        
+        // Focus management for dynamic content
+        function manageFocus(element) {
+            if (element) {
+                element.focus();
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        
+        // Announce dynamic content changes to screen readers
+        function announceToScreenReader(message, priority = 'polite') {
+            const announcement = document.createElement('div');
+            announcement.setAttribute('aria-live', priority);
+            announcement.setAttribute('aria-atomic', 'true');
+            announcement.className = 'sr-only';
+            announcement.textContent = message;
+            
+            document.body.appendChild(announcement);
+            
+            setTimeout(() => {
+                document.body.removeChild(announcement);
+            }, 1000);
+        }
+        
+        // Make announceToScreenReader globally available
+        window.announceToScreenReader = announceToScreenReader;
+        window.manageFocus = manageFocus;
+    </script>
+</body>
+</html> 

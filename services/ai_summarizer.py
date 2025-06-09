@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-AI-powered scholarship text summarization service using GPT-4.1
+AI-powered treatment text summarization service using GPT-4.1
 
 This module provides functions to:
-1. Summarize lengthy scholarship descriptions into concise, readable formats
+1. Summarize lengthy treatment descriptions into concise, readable formats
 2. Extract key eligibility criteria and requirements as bullet points
 3. Cache results to avoid redundant API calls
 4. Handle API failures gracefully with fallbacks
 
-@file purpose: Provides AI summarization capabilities for scholarship content
+@file purpose: Provides AI summarization capabilities for treatment content
 """
 
 import asyncio
@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-class ScholarshipSummarizer:
+class TreatmentSummarizer:
     def __init__(self):
         """Initialize the AI summarizer with OpenAI client"""
         self.client = AsyncOpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -31,25 +31,25 @@ class ScholarshipSummarizer:
         self.cache = {}  # Simple in-memory cache
         
     def _generate_cache_key(self, text: str) -> str:
-        """Generate a cache key from scholarship text"""
+        """Generate a cache key from treatment text"""
         return hashlib.md5(text.encode()).hexdigest()
     
-    async def summarize_scholarship(self, scholarship_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def summarize_treatment(self, treatment_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Summarize scholarship content using GPT-4.1
+        Summarize treatment content using GPT-4.1
         
         Args:
-            scholarship_data: Dictionary containing scholarship information
+            treatment_data: Dictionary containing treatment information
             
         Returns:
             Dictionary with original data plus AI-generated summary
         """
         try:
             # Extract text content for summarization
-            text_content = self._extract_scholarship_text(scholarship_data)
+            text_content = self._extract_treatment_text(treatment_data)
             
             if not text_content.strip():
-                return scholarship_data
+                return treatment_data
                 
             # Check cache first
             cache_key = self._generate_cache_key(text_content)
@@ -57,52 +57,52 @@ class ScholarshipSummarizer:
                 summary_data = self.cache[cache_key]
             else:
                 # Generate AI summary
-                summary_data = await self._generate_ai_summary(text_content, scholarship_data.get('title', 'Scholarship'))
+                summary_data = await self._generate_ai_summary(text_content, treatment_data.get('title', 'Treatment'))
                 self.cache[cache_key] = summary_data
             
-            # Add AI summary to scholarship data
-            scholarship_data['ai_summary'] = summary_data
-            return scholarship_data
+            # Add AI summary to treatment data
+            treatment_data['ai_summary'] = summary_data
+            return treatment_data
             
         except Exception as e:
-            print(f"Error summarizing scholarship: {e}")
+            print(f"Error summarizing treatment: {e}")
             # Return original data if summarization fails
-            return scholarship_data
+            return treatment_data
     
-    def _extract_scholarship_text(self, scholarship: Dict[str, Any]) -> str:
-        """Extract all relevant text content from scholarship data"""
+    def _extract_treatment_text(self, treatment: Dict[str, Any]) -> str:
+        """Extract all relevant text content from treatment data"""
         text_parts = []
         
         # Main description
-        if scholarship.get('description'):
-            text_parts.append(f"Description: {scholarship['description']}")
-        elif scholarship.get('summary'):
-            text_parts.append(f"Summary: {scholarship['summary']}")
+        if treatment.get('description'):
+            text_parts.append(f"Description: {treatment['description']}")
+        elif treatment.get('summary'):
+            text_parts.append(f"Summary: {treatment['summary']}")
             
         # Eligibility criteria
-        if scholarship.get('eligibility') and isinstance(scholarship['eligibility'], list):
-            text_parts.append(f"Eligibility: {' '.join(scholarship['eligibility'])}")
-        elif scholarship.get('eligibility_criteria') and isinstance(scholarship['eligibility_criteria'], list):
-            text_parts.append(f"Criteria: {' '.join(scholarship['eligibility_criteria'])}")
+        if treatment.get('eligibility') and isinstance(treatment['eligibility'], list):
+            text_parts.append(f"Eligibility: {' '.join(treatment['eligibility'])}")
+        elif treatment.get('eligibility_criteria') and isinstance(treatment['eligibility_criteria'], list):
+            text_parts.append(f"Criteria: {' '.join(treatment['eligibility_criteria'])}")
             
         # Additional requirements
-        if scholarship.get('additional_requirements') and isinstance(scholarship['additional_requirements'], list):
-            text_parts.append(f"Requirements: {' '.join(scholarship['additional_requirements'])}")
+        if treatment.get('additional_requirements') and isinstance(treatment['additional_requirements'], list):
+            text_parts.append(f"Requirements: {' '.join(treatment['additional_requirements'])}")
             
-        # Academic levels and majors
-        if scholarship.get('eligible_academic_levels'):
-            levels = scholarship['eligible_academic_levels']
-            if isinstance(levels, list):
-                text_parts.append(f"Academic Levels: {', '.join(levels)}")
+        # Treatment types and conditions
+        if treatment.get('treatment_types'):
+            types = treatment['treatment_types']
+            if isinstance(types, list):
+                text_parts.append(f"Treatment Types: {', '.join(types)}")
             else:
-                text_parts.append(f"Academic Levels: {levels}")
+                text_parts.append(f"Treatment Types: {types}")
                 
-        if scholarship.get('eligible_majors'):
-            majors = scholarship['eligible_majors']
-            if isinstance(majors, list):
-                text_parts.append(f"Eligible Majors: {', '.join(majors)}")
+        if treatment.get('conditions_treated'):
+            conditions = treatment['conditions_treated']
+            if isinstance(conditions, list):
+                text_parts.append(f"Conditions Treated: {', '.join(conditions)}")
             else:
-                text_parts.append(f"Eligible Majors: {majors}")
+                text_parts.append(f"Conditions Treated: {conditions}")
         
         return ' | '.join(text_parts)
     
@@ -110,9 +110,9 @@ class ScholarshipSummarizer:
         """Generate AI summary using GPT-4.1"""
         
         prompt = f"""
-        Summarize the following scholarship information into a clean, readable format:
+        Summarize the following treatment information into a clean, readable format:
 
-        Scholarship: {title}
+        Treatment: {title}
         Content: {text_content}
 
         Please provide:
@@ -134,7 +134,7 @@ class ScholarshipSummarizer:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are an expert at summarizing scholarship information clearly and concisely. Always respond with valid JSON."},
+                    {"role": "system", "content": "You are an expert at summarizing treatment information clearly and concisely. Always respond with valid JSON."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.3,
@@ -162,38 +162,38 @@ class ScholarshipSummarizer:
         """Generate a simple fallback summary if AI fails"""
         # Simple text processing fallback
         sentences = text_content.split('. ')
-        overview = sentences[0] if sentences else "Scholarship opportunity available."
+        overview = sentences[0] if sentences else "Treatment opportunity available."
         
         return {
             "overview": overview,
             "eligibility_points": ["Check official requirements"],
-            "key_details": ["Visit scholarship website for full details"]
+            "key_details": ["Visit treatment website for full details"]
         }
 
 # Global summarizer instance
-summarizer = ScholarshipSummarizer()
+summarizer = TreatmentSummarizer()
 
-async def summarize_scholarship_batch(scholarships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+async def summarize_treatment_batch(treatments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
-    Summarize a batch of scholarships concurrently
+    Summarize a batch of treatments concurrently
     
     Args:
-        scholarships: List of scholarship dictionaries
+        treatments: List of treatment dictionaries
         
     Returns:
-        List of scholarships with AI summaries added
+        List of treatments with AI summaries added
     """
-    tasks = [summarizer.summarize_scholarship(scholarship) for scholarship in scholarships]
+    tasks = [summarizer.summarize_treatment(treatment) for treatment in treatments]
     return await asyncio.gather(*tasks)
 
-async def summarize_single_scholarship(scholarship: Dict[str, Any]) -> Dict[str, Any]:
+async def summarize_single_treatment(treatment: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Summarize a single scholarship
+    Summarize a single treatment
     
     Args:
-        scholarship: Scholarship dictionary
+        treatment: Treatment dictionary
         
     Returns:
-        Scholarship with AI summary added
+        Treatment with AI summary added
     """
-    return await summarizer.summarize_scholarship(scholarship) 
+    return await summarizer.summarize_treatment(treatment) 

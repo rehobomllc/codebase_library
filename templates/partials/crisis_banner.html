@@ -1,0 +1,322 @@
+<!-- Crisis Support Banner -->
+<div id="crisis-banner" class="crisis-banner" role="banner" aria-label="Crisis support information">
+    <div class="crisis-content">
+        <i class="fas fa-heart" aria-hidden="true"></i>
+        <span class="crisis-message">If you're in crisis, you're not alone.</span>
+        <div class="crisis-actions">
+            <a href="tel:988" class="crisis-button primary" aria-label="Call 988 Crisis Lifeline">
+                <i class="fas fa-phone" aria-hidden="true"></i>
+                Call 988 - Crisis Lifeline
+            </a>
+            <a href="tel:911" class="crisis-button secondary" aria-label="Call 911 for emergency services">
+                <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                Call 911 - Emergency
+            </a>
+            <a href="sms:741741" class="crisis-button tertiary" aria-label="Text HOME to 741741 for crisis text support">
+                <i class="fas fa-comment" aria-hidden="true"></i>
+                Text 741741
+            </a>
+        </div>
+        <button class="crisis-dismiss" onclick="dismissCrisisBanner()" aria-label="Dismiss crisis banner">
+            <i class="fas fa-times" aria-hidden="true"></i>
+            <span class="sr-only">Close crisis banner</span>
+        </button>
+    </div>
+</div>
+
+<style>
+/* Crisis Banner Styles */
+.crisis-banner {
+    background: linear-gradient(135deg, var(--crisis-color, #dc2626), #ef4444);
+    color: var(--crisis-text, #ffffff);
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky, 1020);
+    box-shadow: var(--shadow-md);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.crisis-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4, 1rem);
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.crisis-message {
+    font-weight: var(--font-medium, 500);
+    font-size: var(--text-base, 1rem);
+    text-align: center;
+}
+
+.crisis-actions {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.crisis-button {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--crisis-text, #ffffff);
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    border-radius: var(--radius-lg, 0.5rem);
+    text-decoration: none;
+    font-weight: var(--font-semibold, 600);
+    font-size: var(--text-sm, 0.875rem);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    transition: all var(--duration-200, 200ms) var(--ease-out);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    white-space: nowrap;
+}
+
+.crisis-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.crisis-button:focus {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.crisis-button:active {
+    transform: translateY(0);
+}
+
+.crisis-button.primary {
+    background: rgba(255, 255, 255, 0.25);
+    font-weight: var(--font-bold, 700);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.crisis-button.secondary {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.crisis-button.tertiary {
+    background: rgba(255, 255, 255, 0.1);
+    font-size: var(--text-xs, 0.75rem);
+}
+
+.crisis-dismiss {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--crisis-text, #ffffff);
+    padding: var(--space-2, 0.5rem);
+    cursor: pointer;
+    border-radius: var(--radius-md, 0.375rem);
+    transition: all var(--duration-200, 200ms) var(--ease-out);
+    font-size: var(--text-lg, 1.125rem);
+}
+
+.crisis-dismiss:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.crisis-dismiss:focus {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .crisis-content {
+        flex-direction: column;
+        gap: var(--space-2, 0.5rem);
+        text-align: center;
+        padding-right: 2rem; /* Space for dismiss button */
+    }
+    
+    .crisis-message {
+        font-size: var(--text-sm, 0.875rem);
+    }
+    
+    .crisis-actions {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .crisis-button {
+        font-size: var(--text-xs, 0.75rem);
+        padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    }
+    
+    .crisis-dismiss {
+        position: absolute;
+        right: var(--space-2, 0.5rem);
+        top: var(--space-2, 0.5rem);
+    }
+}
+
+@media (max-width: 480px) {
+    .crisis-actions {
+        flex-direction: column;
+        gap: var(--space-1, 0.25rem);
+        width: 100%;
+    }
+    
+    .crisis-button {
+        width: 100%;
+        justify-content: center;
+        max-width: 200px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .crisis-banner {
+        display: none !important;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .crisis-banner {
+        background: #000000;
+        color: #ffffff;
+    }
+    
+    .crisis-button {
+        border: 2px solid #ffffff;
+        background: transparent;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .crisis-banner {
+        animation: none;
+    }
+    
+    .crisis-button {
+        transition: none;
+    }
+    
+    .crisis-button:hover {
+        transform: none;
+    }
+}
+
+/* Hidden State */
+.crisis-banner.hidden {
+    display: none;
+}
+</style>
+
+<script>
+// Crisis Banner JavaScript
+function dismissCrisisBanner() {
+    const banner = document.getElementById('crisis-banner');
+    if (banner) {
+        banner.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+        banner.style.transform = 'translateY(-100%)';
+        banner.style.opacity = '0';
+        
+        setTimeout(() => {
+            banner.classList.add('hidden');
+            // Store dismissal preference
+            localStorage.setItem('crisis_banner_dismissed', 'true');
+        }, 300);
+        
+        // Announce to screen readers
+        if (window.announceToScreenReader) {
+            window.announceToScreenReader('Crisis banner dismissed');
+        }
+    }
+}
+
+// Track crisis button clicks for analytics
+document.addEventListener('DOMContentLoaded', function() {
+    const crisisButtons = document.querySelectorAll('.crisis-button');
+    
+    crisisButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const action = this.getAttribute('href');
+            const buttonType = this.textContent.trim();
+            
+            // Log crisis button interaction
+            console.log('Crisis support accessed:', buttonType, action);
+            
+            // Send analytics event if tracking is available
+            if (typeof gtag === 'function') {
+                gtag('event', 'crisis_support_accessed', {
+                    'event_category': 'Safety',
+                    'event_label': buttonType,
+                    'value': 1
+                });
+            }
+            
+            // Track in backend if function available
+            if (typeof trackEvent === 'function') {
+                trackEvent('crisis_support_clicked', {
+                    button_type: buttonType,
+                    action: action,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+    });
+    
+    // Check if banner was previously dismissed
+    if (localStorage.getItem('crisis_banner_dismissed') === 'true') {
+        const banner = document.getElementById('crisis-banner');
+        // Show it anyway for safety - crisis info is always important
+        // User can dismiss again if needed
+    }
+    
+    // Auto-show banner again after 24 hours for safety
+    const lastDismissed = localStorage.getItem('crisis_banner_last_dismissed');
+    const now = new Date().getTime();
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+    
+    if (lastDismissed && (now - parseInt(lastDismissed)) > twentyFourHours) {
+        localStorage.removeItem('crisis_banner_dismissed');
+    }
+});
+
+// Store timestamp when dismissed
+function dismissCrisisBanner() {
+    const banner = document.getElementById('crisis-banner');
+    if (banner) {
+        banner.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+        banner.style.transform = 'translateY(-100%)';
+        banner.style.opacity = '0';
+        
+        setTimeout(() => {
+            banner.classList.add('hidden');
+            localStorage.setItem('crisis_banner_dismissed', 'true');
+            localStorage.setItem('crisis_banner_last_dismissed', new Date().getTime().toString());
+        }, 300);
+        
+        if (window.announceToScreenReader) {
+            window.announceToScreenReader('Crisis banner dismissed. Access help anytime through the main menu.');
+        }
+    }
+}
+</script> 

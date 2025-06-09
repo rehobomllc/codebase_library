@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treatment Navigator - Find Mental Health & Substance Use Support</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/treatment.css" rel="stylesheet">
+    <meta name="description" content="Compassionate support to find mental health and substance use treatment. Available 24/7 with crisis support.">
+</head>
+<body>
+    <!-- Crisis Support Banner -->
+    <div id="crisis-banner" class="crisis-banner">
+        <div class="crisis-content">
+            <i class="fas fa-heart"></i>
+            <span>If you're in crisis, you're not alone.</span>
+            <a href="tel:988" class="crisis-button">
+                <i class="fas fa-phone"></i>
+                Call 988 - Crisis Lifeline
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <h1><i class="fas fa-compass"></i> Treatment Navigator</h1>
+                <p class="header-subtitle">Compassionate guidance to mental health and substance use treatment</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div class="welcome-card">
+                    <h2>We're here to help you find the right treatment</h2>
+                    <p>Getting help takes courage. Our AI-powered Treatment Navigator provides personalized support to help you find mental health and substance use treatment options that work for you.</p>
+                    
+                    <div class="features-grid">
+                        <div class="feature-item">
+                            <i class="fas fa-search"></i>
+                            <h3>Find Facilities</h3>
+                            <p>Search for treatment centers near you</p>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>Verify Insurance</h3>
+                            <p>Check your coverage and benefits</p>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-calendar-check"></i>
+                            <h3>Schedule Appointments</h3>
+                            <p>Book and manage your appointments</p>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-hand-holding-heart"></i>
+                            <h3>Ongoing Support</h3>
+                            <p>Reminders and continued care</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Chat Interface -->
+            <section class="chat-section">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <i class="fas fa-comments"></i>
+                        <h3>Start Your Treatment Journey</h3>
+                        <p>Tell me about what kind of support you're looking for</p>
+                    </div>
+                    
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="message bot-message">
+                            <div class="message-avatar">
+                                <i class="fas fa-user-nurse"></i>
+                            </div>
+                            <div class="message-content">
+                                <p>Hello, I'm your Treatment Navigator. I'm here to help you find mental health or substance use treatment options. Everything we discuss is confidential.</p>
+                                <p>What kind of support are you looking for today?</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-section">
+                        <div class="input-container">
+                            <input type="text" id="user-message" placeholder="Type your message here..." maxlength="500">
+                            <button id="send-button" type="button">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <div class="quick-actions">
+                            <button class="quick-action" data-message="I need help finding mental health treatment">
+                                Mental Health Treatment
+                            </button>
+                            <button class="quick-action" data-message="I need help with substance use treatment">
+                                Substance Use Treatment
+                            </button>
+                            <button class="quick-action" data-message="I need to verify my insurance coverage">
+                                Check Insurance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Identification -->
+            <section class="user-section">
+                <div class="user-card">
+                    <h3>Your Information</h3>
+                    <p>To provide personalized assistance, please provide a unique identifier (this helps us maintain your conversation history securely):</p>
+                    <div class="user-input">
+                        <input type="text" id="user-id" placeholder="Enter your email or create a unique ID" required>
+                        <button id="set-user-id" type="button">Set ID</button>
+                    </div>
+                    <p class="privacy-note">
+                        <i class="fas fa-lock"></i>
+                        Your information is kept private and secure. We comply with HIPAA privacy standards.
+                    </p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Crisis Resources</h4>
+                    <ul>
+                        <li><a href="tel:988">988 - Suicide & Crisis Lifeline</a></li>
+                        <li><a href="tel:911">911 - Emergency Services</a></li>
+                        <li><a href="https://www.samhsa.gov/find-help/national-helpline">SAMHSA National Helpline</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Treatment Types</h4>
+                    <ul>
+                        <li>Inpatient Treatment</li>
+                        <li>Outpatient Programs</li>
+                        <li>Counseling & Therapy</li>
+                        <li>Medication Management</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Privacy & Support</h4>
+                    <ul>
+                        <li>HIPAA Compliant</li>
+                        <li>Confidential Support</li>
+                        <li>24/7 Availability</li>
+                        <li>No Judgment Zone</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Treatment Navigator. Providing compassionate care navigation.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Finding the right resources for you...</p>
+        </div>
+    </div>
+
+    <script src="/static/js/treatment.js"></script>
+</body>
+</html> 

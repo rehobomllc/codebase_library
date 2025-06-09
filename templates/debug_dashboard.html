@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treatment Navigator - Debug Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/debug.css" rel="stylesheet">
+</head>
+<body>
+    <header class="debug-header">
+        <div class="container">
+            <h1><i class="fas fa-bug"></i> Treatment Navigator Debug Dashboard</h1>
+            <div class="header-actions">
+                <button id="refresh-data" class="btn-primary">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <a href="/" class="btn-secondary">
+                    <i class="fas fa-home"></i> Back to App
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="debug-main">
+        <div class="container">
+            <!-- System Status -->
+            <section class="debug-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-heartbeat"></i> System Status</h2>
+                    <div class="status-indicator" id="system-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Loading...</span>
+                    </div>
+                </div>
+                <div class="status-grid">
+                    <div class="status-card">
+                        <i class="fas fa-database"></i>
+                        <h3>Database</h3>
+                        <div class="status-value" id="db-status">Checking...</div>
+                    </div>
+                    <div class="status-card">
+                        <i class="fas fa-robot"></i>
+                        <h3>AI Agents</h3>
+                        <div class="status-value" id="agents-status">Checking...</div>
+                    </div>
+                    <div class="status-card">
+                        <i class="fas fa-plug"></i>
+                        <h3>Arcade Integration</h3>
+                        <div class="status-value" id="arcade-status">Checking...</div>
+                    </div>
+                    <div class="status-card">
+                        <i class="fas fa-users"></i>
+                        <h3>Active Users</h3>
+                        <div class="status-value" id="active-users">Loading...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Agent Performance -->
+            <section class="debug-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-line"></i> Agent Performance</h2>
+                </div>
+                <div class="agent-grid">
+                    <div class="agent-card">
+                        <h3><i class="fas fa-user-nurse"></i> Triage Agent</h3>
+                        <div class="agent-metrics">
+                            <div class="metric">
+                                <span class="metric-label">Sessions</span>
+                                <span class="metric-value" id="triage-sessions">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Avg Response Time</span>
+                                <span class="metric-value" id="triage-response-time">0ms</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="agent-card">
+                        <h3><i class="fas fa-search"></i> Facility Search</h3>
+                        <div class="agent-metrics">
+                            <div class="metric">
+                                <span class="metric-label">Searches</span>
+                                <span class="metric-value" id="facility-searches">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Success Rate</span>
+                                <span class="metric-value" id="facility-success-rate">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="agent-card">
+                        <h3><i class="fas fa-shield-alt"></i> Insurance Verification</h3>
+                        <div class="agent-metrics">
+                            <div class="metric">
+                                <span class="metric-label">Verifications</span>
+                                <span class="metric-value" id="insurance-verifications">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Coverage Found</span>
+                                <span class="metric-value" id="coverage-found">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="agent-card">
+                        <h3><i class="fas fa-calendar-check"></i> Appointment Scheduler</h3>
+                        <div class="agent-metrics">
+                            <div class="metric">
+                                <span class="metric-label">Appointments</span>
+                                <span class="metric-value" id="appointments-scheduled">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Success Rate</span>
+                                <span class="metric-value" id="appointment-success-rate">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Events -->
+            <section class="debug-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-list"></i> Recent Events</h2>
+                    <button id="clear-events" class="btn-danger">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+                <div class="events-container">
+                    <div id="events-list" class="events-list">
+                        <div class="loading-placeholder">Loading recent events...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- API Usage -->
+            <section class="debug-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-bar"></i> API Usage (Last 24h)</h2>
+                </div>
+                <div class="usage-grid">
+                    <div class="usage-card">
+                        <h3>Total Requests</h3>
+                        <div class="usage-value" id="total-requests">0</div>
+                    </div>
+                    <div class="usage-card">
+                        <h3>Chat Messages</h3>
+                        <div class="usage-value" id="chat-messages">0</div>
+                    </div>
+                    <div class="usage-card">
+                        <h3>Facility Searches</h3>
+                        <div class="usage-value" id="facility-api-calls">0</div>
+                    </div>
+                    <div class="usage-card">
+                        <h3>Insurance Checks</h3>
+                        <div class="usage-value" id="insurance-api-calls">0</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Error Logs -->
+            <section class="debug-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> Error Logs</h2>
+                    <button id="clear-errors" class="btn-warning">
+                        <i class="fas fa-broom"></i> Clear Errors
+                    </button>
+                </div>
+                <div class="logs-container">
+                    <div id="error-logs" class="logs-list">
+                        <div class="no-errors">No recent errors detected</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuration -->
+            <section class="debug-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-cogs"></i> Configuration</h2>
+                </div>
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>OpenAI API</label>
+                        <div class="config-status" id="openai-config">
+                            <span class="status-indicator"></span>
+                            <span class="status-text">Configured</span>
+                        </div>
+                    </div>
+                    <div class="config-item">
+                        <label>Arcade API</label>
+                        <div class="config-status" id="arcade-config">
+                            <span class="status-indicator"></span>
+                            <span class="status-text">Configured</span>
+                        </div>
+                    </div>
+                    <div class="config-item">
+                        <label>Database URL</label>
+                        <div class="config-status" id="database-config">
+                            <span class="status-indicator"></span>
+                            <span class="status-text">Configured</span>
+                        </div>
+                    </div>
+                    <div class="config-item">
+                        <label>Environment</label>
+                        <div class="config-value">Production</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="debug-footer">
+        <div class="container">
+            <p>Treatment Navigator Debug Dashboard - Monitor system health and performance</p>
+            <p class="last-updated">Last updated: <span id="last-updated-time">Never</span></p>
+        </div>
+    </footer>
+
+    <script src="/static/js/debug.js"></script>
+</body>
+</html> 

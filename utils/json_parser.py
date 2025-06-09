@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Robust JSON Parser for Scholarship Search Agent Outputs
-Handles various output formats and extracts scholarship data reliably
+Robust JSON Parser for Treatment Search Agent Outputs
+Handles various output formats and extracts treatment data reliably
 """
 
 import json
@@ -11,51 +11,51 @@ from typing import List, Dict, Any, Optional, Union
 
 logger = logging.getLogger(__name__)
 
-def extract_scholarships_from_output(output: str) -> List[Dict[str, Any]]:
+def extract_treatments_from_output(output: str) -> List[Dict[str, Any]]:
     """
-    Extract scholarship data from agent output using multiple parsing strategies.
+    Extract treatment data from agent output using multiple parsing strategies.
     
     Args:
         output: Raw output from search agent
         
     Returns:
-        List of scholarship dictionaries
+        List of treatment dictionaries
     """
     if not output or not isinstance(output, str):
         logger.warning("Invalid output provided to parser")
         return []
     
     # Strategy 1: Try to parse as pure JSON
-    scholarships = try_parse_pure_json(output)
-    if scholarships:
-        logger.info(f"Successfully parsed {len(scholarships)} scholarships using pure JSON")
-        return scholarships
+    treatments = try_parse_pure_json(output)
+    if treatments:
+        logger.info(f"Successfully parsed {len(treatments)} treatments using pure JSON")
+        return treatments
     
     # Strategy 2: Extract JSON from markdown code blocks
-    scholarships = try_parse_json_from_markdown(output)
-    if scholarships:
-        logger.info(f"Successfully parsed {len(scholarships)} scholarships from markdown JSON")
-        return scholarships
+    treatments = try_parse_json_from_markdown(output)
+    if treatments:
+        logger.info(f"Successfully parsed {len(treatments)} treatments from markdown JSON")
+        return treatments
     
     # Strategy 3: Extract structured JSON object
-    scholarships = try_parse_structured_json(output)
-    if scholarships:
-        logger.info(f"Successfully parsed {len(scholarships)} scholarships from structured JSON")
-        return scholarships
+    treatments = try_parse_structured_json(output)
+    if treatments:
+        logger.info(f"Successfully parsed {len(treatments)} treatments from structured JSON")
+        return treatments
     
-    # Strategy 4: Parse markdown-formatted scholarships
-    scholarships = try_parse_markdown_scholarships(output)
-    if scholarships:
-        logger.info(f"Successfully parsed {len(scholarships)} scholarships from markdown format")
-        return scholarships
+    # Strategy 4: Parse markdown-formatted treatments
+    treatments = try_parse_markdown_treatments(output)
+    if treatments:
+        logger.info(f"Successfully parsed {len(treatments)} treatments from markdown format")
+        return treatments
     
     # Strategy 5: Parse numbered list format
-    scholarships = try_parse_numbered_list(output)
-    if scholarships:
-        logger.info(f"Successfully parsed {len(scholarships)} scholarships from numbered list")
-        return scholarships
+    treatments = try_parse_numbered_list(output)
+    if treatments:
+        logger.info(f"Successfully parsed {len(treatments)} treatments from numbered list")
+        return treatments
     
-    logger.warning("Failed to parse any scholarships from output")
+    logger.warning("Failed to parse any treatments from output")
     return []
 
 def try_parse_pure_json(output: str) -> List[Dict[str, Any]]:
@@ -112,8 +112,8 @@ def try_parse_json_from_markdown(output: str) -> List[Dict[str, Any]]:
 
 def try_parse_structured_json(output: str) -> List[Dict[str, Any]]:
     """Extract JSON object from mixed content."""
-    # Look for JSON object with scholarship_candidates
-    json_pattern = r'\{[^{}]*"scholarship_candidates"[^{}]*\[[^\]]*\][^{}]*\}'
+    # Look for JSON object with treatment_candidates
+    json_pattern = r'\{[^{}]*"treatment_candidates"[^{}]*\[[^\]]*\][^{}]*\}'
     matches = re.findall(json_pattern, output, re.DOTALL)
     
     for match in matches:
@@ -143,75 +143,75 @@ def try_parse_structured_json(output: str) -> List[Dict[str, Any]]:
     
     return []
 
-def try_parse_markdown_scholarships(output: str) -> List[Dict[str, Any]]:
-    """Parse scholarships from markdown format."""
-    scholarships = []
+def try_parse_markdown_treatments(output: str) -> List[Dict[str, Any]]:
+    """Parse treatments from markdown format."""
+    treatments = []
     
-    # Pattern for numbered scholarships with markdown formatting
-    # Matches: 1. **Scholarship Name** or **1. Scholarship Name**
-    scholarship_pattern = r'(?:^|\n)(?:\*\*)?(\d+)\.?\s*\*\*([^*]+)\*\*'
-    matches = re.findall(scholarship_pattern, output, re.MULTILINE)
+    # Pattern for numbered treatments with markdown formatting
+    # Matches: 1. **Treatment Name** or **1. Treatment Name**
+    treatment_pattern = r'(?:^|\n)(?:\*\*)?(\d+)\.?\s*\*\*([^*]+)\*\*'
+    matches = re.findall(treatment_pattern, output, re.MULTILINE)
     
     if not matches:
         # Try alternative pattern for different numbering styles
-        scholarship_pattern = r'(?:^|\n)(\d+)\.\s*\*\*([^*]+)\*\*'
-        matches = re.findall(scholarship_pattern, output, re.MULTILINE)
+        treatment_pattern = r'(?:^|\n)(\d+)\.\s*\*\*([^*]+)\*\*'
+        matches = re.findall(treatment_pattern, output, re.MULTILINE)
     
     if not matches:
-        # Try pattern without numbers: **Scholarship Name**
-        scholarship_pattern = r'(?:^|\n)\*\*([^*]+(?:scholarship|grant|award)[^*]*)\*\*'
-        title_matches = re.findall(scholarship_pattern, output, re.MULTILINE | re.IGNORECASE)
+        # Try pattern without numbers: **Treatment Name**
+        treatment_pattern = r'(?:^|\n)\*\*([^*]+(?:treatment|therapy|program)[^*]*)\*\*'
+        title_matches = re.findall(treatment_pattern, output, re.MULTILINE | re.IGNORECASE)
         matches = [(str(i+1), title) for i, title in enumerate(title_matches)]
     
     for number, title in matches:
-        # Extract details for this scholarship
-        scholarship = extract_scholarship_details_from_text(output, title, int(number) if number.isdigit() else 1)
-        if scholarship:
-            scholarships.append(scholarship)
+        # Extract details for this treatment
+        treatment = extract_treatment_details_from_text(output, title, int(number) if number.isdigit() else 1)
+        if treatment:
+            treatments.append(treatment)
     
-    return scholarships
+    return treatments
 
 def try_parse_numbered_list(output: str) -> List[Dict[str, Any]]:
-    """Parse scholarships from numbered list format."""
-    scholarships = []
+    """Parse treatments from numbered list format."""
+    treatments = []
     
     # Split by numbered items
     sections = re.split(r'\n\s*\d+\.\s*', output)
     
     for i, section in enumerate(sections[1:], 1):  # Skip first empty section
-        scholarship = parse_scholarship_section(section, i)
-        if scholarship:
-            scholarships.append(scholarship)
+        treatment = parse_treatment_section(section, i)
+        if treatment:
+            treatments.append(treatment)
     
-    return scholarships
+    return treatments
 
 def extract_candidates_from_json(data: Union[Dict, List]) -> List[Dict[str, Any]]:
-    """Extract scholarship candidates from parsed JSON data."""
+    """Extract treatment candidates from parsed JSON data."""
     if isinstance(data, list):
         return data
     
     if isinstance(data, dict):
-        # Look for scholarship_candidates key
-        if 'scholarship_candidates' in data:
-            candidates = data['scholarship_candidates']
+        # Look for treatment_candidates key
+        if 'treatment_candidates' in data:
+            candidates = data['treatment_candidates']
             if isinstance(candidates, list):
                 return candidates
         
-        # Look for scholarships key
-        if 'scholarships' in data:
-            scholarships = data['scholarships']
-            if isinstance(scholarships, list):
-                return scholarships
+        # Look for treatments key
+        if 'treatments' in data:
+            treatments = data['treatments']
+            if isinstance(treatments, list):
+                return treatments
         
-        # If data itself looks like a scholarship
-        if 'title' in data and 'organization' in data:
+        # If data itself looks like a treatment
+        if 'title' in data and ('provider' in data or 'organization' in data):
             return [data]
     
     return []
 
-def extract_scholarship_details_from_text(text: str, title: str, number: int) -> Optional[Dict[str, Any]]:
-    """Extract scholarship details from surrounding text."""
-    # Find the section for this scholarship
+def extract_treatment_details_from_text(text: str, title: str, number: int) -> Optional[Dict[str, Any]]:
+    """Extract treatment details from surrounding text."""
+    # Find the section for this treatment
     start_pattern = rf'(?:^|\n)(?:\*\*)?{number}\.?\s*\*\*{re.escape(title)}\*\*'
     next_pattern = rf'(?:^|\n)(?:\*\*)?{number + 1}\.?\s*\*\*'
     
@@ -221,7 +221,7 @@ def extract_scholarship_details_from_text(text: str, title: str, number: int) ->
     
     start_pos = start_match.end()
     
-    # Find end position (next scholarship or end of text)
+    # Find end position (next treatment or end of text)
     next_match = re.search(next_pattern, text[start_pos:], re.MULTILINE)
     if next_match:
         end_pos = start_pos + next_match.start()
@@ -230,24 +230,24 @@ def extract_scholarship_details_from_text(text: str, title: str, number: int) ->
         section = text[start_pos:]
     
     # Extract details from section
-    scholarship = {
+    treatment = {
         'title': title.strip(),
-        'organization': extract_field_from_section(section, ['Organization', 'Sponsor']),
+        'provider': extract_field_from_section(section, ['Provider', 'Organization']),
         'url': extract_url_from_section(section),
         'description': extract_field_from_section(section, ['Description', 'Summary']),
         'estimated_deadline': extract_field_from_section(section, ['Deadline', 'Due Date']),
-        'estimated_amount': extract_field_from_section(section, ['Amount', 'Value', 'Award']),
+        'estimated_cost': extract_field_from_section(section, ['Cost', 'Price', 'Fee']),
         'basic_eligibility': extract_field_from_section(section, ['Eligibility', 'Requirements']),
         'relevance_score': 'MEDIUM'
     }
     
     # Clean up None values
-    scholarship = {k: v for k, v in scholarship.items() if v is not None}
+    treatment = {k: v for k, v in treatment.items() if v is not None}
     
-    return scholarship if len(scholarship) > 1 else None
+    return treatment if len(treatment) > 1 else None
 
-def parse_scholarship_section(section: str, number: int) -> Optional[Dict[str, Any]]:
-    """Parse a single scholarship section."""
+def parse_treatment_section(section: str, number: int) -> Optional[Dict[str, Any]]:
+    """Parse a single treatment section."""
     lines = section.strip().split('\n')
     if not lines:
         return None
@@ -257,21 +257,21 @@ def parse_scholarship_section(section: str, number: int) -> Optional[Dict[str, A
     if title.startswith('**') and title.endswith('**'):
         title = title[2:-2]
     
-    scholarship = {
+    treatment = {
         'title': title,
-        'organization': extract_field_from_section(section, ['Organization', 'Sponsor']),
+        'provider': extract_field_from_section(section, ['Provider', 'Organization']),
         'url': extract_url_from_section(section),
         'description': extract_field_from_section(section, ['Description', 'Summary']),
         'estimated_deadline': extract_field_from_section(section, ['Deadline', 'Due Date']),
-        'estimated_amount': extract_field_from_section(section, ['Amount', 'Value', 'Award']),
+        'estimated_cost': extract_field_from_section(section, ['Cost', 'Price', 'Fee']),
         'basic_eligibility': extract_field_from_section(section, ['Eligibility', 'Requirements']),
         'relevance_score': 'MEDIUM'
     }
     
     # Clean up None values
-    scholarship = {k: v for k, v in scholarship.items() if v is not None}
+    treatment = {k: v for k, v in treatment.items() if v is not None}
     
-    return scholarship if len(scholarship) > 1 else None
+    return treatment if len(treatment) > 1 else None
 
 def extract_field_from_section(section: str, field_names: List[str]) -> Optional[str]:
     """Extract a specific field from a text section."""
@@ -330,38 +330,38 @@ def fix_common_json_issues(json_str: str) -> str:
     
     return json_str
 
-def validate_scholarship_data(scholarship: Dict[str, Any]) -> bool:
-    """Validate that scholarship data has minimum required fields."""
+def validate_treatment_data(treatment: Dict[str, Any]) -> bool:
+    """Validate that treatment data has minimum required fields."""
     required_fields = ['title']
-    return all(field in scholarship and scholarship[field] for field in required_fields)
+    return all(field in treatment and treatment[field] for field in required_fields)
 
-def clean_scholarship_data(scholarships: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Clean and validate scholarship data."""
+def clean_treatment_data(treatments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Clean and validate treatment data."""
     cleaned = []
     
-    for scholarship in scholarships:
-        if validate_scholarship_data(scholarship):
+    for treatment in treatments:
+        if validate_treatment_data(treatment):
             # Clean up fields
-            for key, value in scholarship.items():
+            for key, value in treatment.items():
                 if isinstance(value, str):
-                    scholarship[key] = value.strip()
+                    treatment[key] = value.strip()
             
-            cleaned.append(scholarship)
+            cleaned.append(treatment)
         else:
-            logger.warning(f"Skipping invalid scholarship: {scholarship}")
+            logger.warning(f"Skipping invalid treatment: {treatment}")
     
     return cleaned
 
 # Main function for easy import
 def parse_agent_output(output: str) -> List[Dict[str, Any]]:
     """
-    Main function to parse agent output and return clean scholarship data.
+    Main function to parse agent output and return clean treatment data.
     
     Args:
         output: Raw output from search agent
         
     Returns:
-        List of cleaned scholarship dictionaries
+        List of cleaned treatment dictionaries
     """
-    scholarships = extract_scholarships_from_output(output)
-    return clean_scholarship_data(scholarships) 
+    treatments = extract_treatments_from_output(output)
+    return clean_treatment_data(treatments) 

@@ -1,638 +1,785 @@
+#!/usr/bin/env python3
+"""
+Treatment Confidence Scorer
+
+Analyzes how well a treatment option matches a patient's profile and needs.
+Provides confidence scores and recommendations for treatment decisions.
+
+@file purpose: Treatment matching and confidence scoring for healthcare decisions
+"""
+
 import logging
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any, Tuple
 from datetime import datetime, timedelta
+import re
 
 # Configure logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-# --- Constants for Scoring ---
-# Weights for different factors (summing to 1.0 or normalized later)
-WEIGHTS = {
-    "gpa": 0.15,
-    "major_field": 0.20,
-    "academic_level": 0.10,
-    "location": 0.05,
-    "demographics": 0.10,
-    "keywords_description": 0.15,
-    "application_complexity": -0.05, # Negative weight if too complex
-    "deadline_urgency": 0.05, # Small positive for moderate urgency, negative for too urgent/past
-    "data_quality": 0.10,
-    "historical_success": 0.05, # Placeholder
+# --- Constants for Treatment Scoring ---
+# Weights for different factors (normalized to sum to 1.0)
+TREATMENT_WEIGHTS = {
+    "condition_match": 0.25,        # How well treatment addresses patient's condition
+    "age_eligibility": 0.15,        # Age requirements and suitability
+    "location_accessibility": 0.15, # Geographic accessibility and distance
+    "insurance_coverage": 0.20,     # Insurance compatibility and coverage
+    "treatment_type_match": 0.10,   # Type of treatment vs patient preferences
+    "provider_quality": 0.05,       # Provider ratings and credentials
+    "cost_affordability": 0.10,     # Treatment costs vs patient's budget
 }
 
-# Thresholds and parameters
-GPA_TOLERANCE = 0.2  # e.g., if user GPA is 3.3 and req is 3.5, it's within tolerance
-URGENT_DEADLINE_DAYS = 7
-VERY_URGENT_DEADLINE_DAYS = 2
-IDEAL_DEADLINE_RANGE_DAYS = (15, 90) # Sweet spot for deadlines
+# Treatment-specific parameters
+PREFERRED_DISTANCE_MILES = 50    # Ideal distance for treatment
+MAX_REASONABLE_DISTANCE_MILES = 200  # Maximum reasonable travel distance
+AGE_TOLERANCE_YEARS = 2          # Flexibility for age requirements
+COST_CONCERN_THRESHOLD = 5000    # Dollar amount that raises affordability concerns
 
-# --- Dataclasses for Inputs and Outputs ---
+# Treatment urgency levels
+URGENCY_LEVELS = {
+    "emergency": {"priority": 1, "wait_time_days": 0},
+    "urgent": {"priority": 2, "wait_time_days": 7},
+    "routine": {"priority": 3, "wait_time_days": 30},
+    "elective": {"priority": 4, "wait_time_days": 90}
+}
+
+# --- Dataclasses for Treatment Inputs and Outputs ---
 
 @dataclass
-class UserProfileInput:
+class PatientProfileInput:
+    """Patient profile information for treatment matching"""
     user_id: str
-    gpa: Optional[float] = None
-    major: Optional[str] = None
-    academic_level: Optional[str] = None # e.g., "Undergraduate", "Postgraduate"
+    age: Optional[int] = None
+    primary_condition: Optional[str] = None
+    secondary_conditions: List[str] = field(default_factory=list)
+    current_medications: List[str] = field(default_factory=list)
+    allergies: List[str] = field(default_factory=list)
+    insurance_provider: Optional[str] = None
+    insurance_plan_type: Optional[str] = None  # HMO, PPO, EPO, etc.
+    location_zip: Optional[str] = None
     location_state: Optional[str] = None
-    location_country: Optional[str] = None
-    demographics: List[str] = field(default_factory=list) # e.g., ["first-generation", "female_in_stem"]
-    interests_keywords: List[str] = field(default_factory=list) # Keywords from user profile/merits
-    preferred_complexity: Optional[str] = "medium" # "low", "medium", "high"
-    # Add other relevant fields from your user profile schema
+    max_travel_distance: Optional[int] = 100  # miles
+    budget_max: Optional[float] = None
+    treatment_urgency: str = "routine"  # emergency, urgent, routine, elective
+    preferred_treatment_types: List[str] = field(default_factory=list)
+    mobility_limitations: List[str] = field(default_factory=list)
+    language_preferences: List[str] = field(default_factory=list)
 
 @dataclass
-class ScholarshipDataInput:
-    scholarship_id: str
+class TreatmentDataInput:
+    """Treatment option information for matching"""
+    treatment_id: str
     name: str
-    min_gpa: Optional[float] = None
-    eligible_majors: List[str] = field(default_factory=list)
-    eligible_academic_levels: List[str] = field(default_factory=list)
-    eligible_locations_state: List[str] = field(default_factory=list)
-    eligible_locations_country: List[str] = field(default_factory=list)
-    demographic_specific: List[str] = field(default_factory=list)
-    keywords: List[str] = field(default_factory=list)
+    provider_name: str
+    treatment_types: List[str] = field(default_factory=list)
+    conditions_treated: List[str] = field(default_factory=list)
+    min_age: Optional[int] = None
+    max_age: Optional[int] = None
+    location_address: Optional[str] = None
+    location_city: Optional[str] = None
+    location_state: Optional[str] = None
+    location_zip: Optional[str] = None
+    distance_miles: Optional[float] = None
+    accepted_insurance: List[str] = field(default_factory=list)
+    estimated_cost: Optional[str] = None  # "$500 - $2000" or "Covered by insurance"
+    wait_time_days: Optional[int] = None
+    provider_rating: Optional[float] = None  # 1.0 - 5.0
+    specialty_certifications: List[str] = field(default_factory=list)
+    languages_spoken: List[str] = field(default_factory=list)
+    accessibility_features: List[str] = field(default_factory=list)
     description: Optional[str] = ""
-    application_complexity_estimate: Optional[str] = "medium" # "low", "medium", "high" (e.g. based on num_essays)
-    deadline: Optional[str] = None # ISO format string: "YYYY-MM-DD"
-    award_amount: Optional[str] = None # Store as string to handle ranges like "$1,000 - $5,000"
-    url: Optional[str] = None
-    # Add other relevant fields from your scholarship data schema
+    website_url: Optional[str] = None
+    phone_number: Optional[str] = None
 
 @dataclass
 class FactorScore:
+    """Individual scoring factor with reasoning"""
     factor_name: str
     score: float  # 0.0 to 1.0
     reason: str
     weight: float
     is_concern: bool = False
     is_positive_match: bool = False
+    confidence_level: str = "medium"  # low, medium, high
 
 @dataclass
 class MatchDetails:
+    """Detailed matching analysis"""
     overall_score: float = 0.0
     factor_scores: List[FactorScore] = field(default_factory=list)
+    critical_issues: List[str] = field(default_factory=list)
+    strong_matches: List[str] = field(default_factory=list)
 
 @dataclass
-class ConfidenceResult:
+class TreatmentConfidenceResult:
+    """Comprehensive treatment confidence analysis result"""
     user_id: str
-    scholarship_id: str
-    scholarship_name: str
-    confidence_score: float # Overall score (0-100)
+    treatment_id: str
+    treatment_name: str
+    provider_name: str
+    confidence_score: float  # 0-100
+    match_level: str  # "excellent", "good", "fair", "poor"
     summary_explanation: str
-    matching_criteria_details: List[str] # Positive matches
-    potential_concerns: List[str] # Negative points or warnings
-    suggested_actions: List[str] # What user can do
-    raw_match_details: MatchDetails # For debugging or more detailed display
+    key_strengths: List[str]
+    potential_concerns: List[str]
+    recommended_actions: List[str]
+    urgency_assessment: str
+    raw_match_details: MatchDetails
 
-
-class ScholarshipConfidenceScorer:
-    def __init__(self, user_profile: UserProfileInput, scholarship_data: ScholarshipDataInput, historical_data: Optional[Dict] = None):
-        self.user_profile = user_profile
-        self.scholarship_data = scholarship_data
-        self.historical_data = historical_data if historical_data else {} # For future use
+class TreatmentConfidenceScorer:
+    """
+    Analyzes treatment options against patient profiles to generate confidence scores
+    """
+    
+    def __init__(self, patient_profile: PatientProfileInput, treatment_data: TreatmentDataInput):
+        self.patient_profile = patient_profile
+        self.treatment_data = treatment_data
         self.match_details = MatchDetails()
-        self.raw_factor_values = {} # To store intermediate values before weighting
+        self.raw_factor_values = {}
 
-        if not user_profile or not scholarship_data:
-            raise ValueError("User profile and scholarship data must be provided.")
-        logger.info(f"Scorer initialized for user {user_profile.user_id} and scholarship {scholarship_data.scholarship_id} ('{scholarship_data.name}')")
+        if not patient_profile or not treatment_data:
+            raise ValueError("Patient profile and treatment data must be provided.")
+        
+        logger.info(f"Treatment scorer initialized for patient {patient_profile.user_id} and treatment {treatment_data.treatment_id}")
 
-    def _add_factor_score(self, name: str, score: float, reason: str, is_concern: bool = False, is_positive: bool = False):
-        weight = WEIGHTS.get(name, 0.0)
+    def _add_factor_score(self, name: str, score: float, reason: str, 
+                         is_concern: bool = False, is_positive: bool = False,
+                         confidence_level: str = "medium"):
+        """Add a factor score to the analysis"""
+        weight = TREATMENT_WEIGHTS.get(name, 0.0)
         self.match_details.factor_scores.append(
-            FactorScore(factor_name=name, score=score, reason=reason, weight=weight, is_concern=is_concern, is_positive_match=is_positive)
+            FactorScore(
+                factor_name=name, 
+                score=score, 
+                reason=reason, 
+                weight=weight,
+                is_concern=is_concern, 
+                is_positive_match=is_positive,
+                confidence_level=confidence_level
+            )
         )
-        self.raw_factor_values[name] = score # Store raw unweighted score for this factor
+        self.raw_factor_values[name] = score
 
-    def _score_gpa(self):
-        user_gpa = self.user_profile.gpa
-        scholarship_min_gpa = self.scholarship_data.min_gpa
-        score = 0.5  # Neutral score if no GPA info
-        reason = "GPA match: Not applicable or information missing."
-        is_positive = False
-        is_concern = False
+    def _text_list_match_score(self, patient_items: List[str], treatment_items: List[str]) -> Tuple[float, List[str]]:
+        """Calculate match score between two lists of text items"""
+        if not treatment_items:  # Treatment is open to all
+            return 0.7, []
+        if not patient_items:  # Patient has not specified
+            return 0.3, []
 
-        if user_gpa is not None and scholarship_min_gpa is not None:
-            if user_gpa >= scholarship_min_gpa:
-                score = 1.0
-                reason = f"GPA match: Your GPA ({user_gpa}) meets or exceeds the minimum requirement ({scholarship_min_gpa})."
-                is_positive = True
-            elif user_gpa >= scholarship_min_gpa - GPA_TOLERANCE:
-                score = 0.6
-                reason = f"GPA consideration: Your GPA ({user_gpa}) is slightly below the minimum ({scholarship_min_gpa}) but may still be considered."
-                is_concern = True
-            else:
-                score = 0.1
-                reason = f"GPA mismatch: Your GPA ({user_gpa}) is below the minimum requirement ({scholarship_min_gpa})."
-                is_concern = True
-        elif scholarship_min_gpa is not None and user_gpa is None:
-            score = 0.3
-            reason = "GPA requirement: Scholarship specifies a minimum GPA, but your GPA is not in your profile."
-            is_concern = True
-        elif user_gpa is not None and scholarship_min_gpa is None:
-            score = 0.7 # Slightly positive if user has GPA but scholarship doesn't specify
-            reason = "GPA match: No minimum GPA specified by the scholarship; your GPA is recorded."
-            is_positive = True
+        patient_set = {item.lower().strip() for item in patient_items if item}
+        treatment_set = {item.lower().strip() for item in treatment_items if item}
         
-        self._add_factor_score("gpa", score, reason, is_concern, is_positive)
-
-    def _text_list_match_score(self, user_items: List[str], scholarship_items: List[str]) -> Tuple[float, List[str]]:
-        if not scholarship_items: # Scholarship is open to all in this category
-            return 0.7, [] # Slightly positive, no specific restriction
-        if not user_items: # User has not specified, scholarship has
-            return 0.3, [] # Low score, user needs to specify
-
-        user_set = {item.lower().strip() for item in user_items if item}
-        scholarship_set = {item.lower().strip() for item in scholarship_items if item}
-        
-        intersection = user_set.intersection(scholarship_set)
+        # Exact matches
+        intersection = patient_set.intersection(treatment_set)
         if intersection:
             return 1.0, list(intersection)
         
-        # Partial match (e.g., "Computer Science" vs "Science and Engineering") - simple for now
-        for u_item in user_set:
-            for s_item in scholarship_set:
-                if u_item in s_item or s_item in u_item:
-                    return 0.65, [f"Partial match: '{u_item}' related to '{s_item}'"]
-        return 0.1, [] # No match
+        # Partial matches (substring matching)
+        partial_matches = []
+        for p_item in patient_set:
+            for t_item in treatment_set:
+                if p_item in t_item or t_item in p_item:
+                    partial_matches.append(f"'{p_item}' ~ '{t_item}'")
+                    return 0.65, partial_matches
+        
+        return 0.1, []  # No match found
 
-    def _score_major_field(self):
-        score, matches = self._text_list_match_score(
-            [self.user_profile.major] if self.user_profile.major else [],
-            self.scholarship_data.eligible_majors
-        )
-        reason = "Major/Field: Scholarship is open to all majors."
+    def _score_condition_match(self):
+        """Score how well the treatment addresses the patient's conditions"""
+        patient_conditions = [self.patient_profile.primary_condition] if self.patient_profile.primary_condition else []
+        patient_conditions.extend(self.patient_profile.secondary_conditions)
+        
+        score, matches = self._text_list_match_score(patient_conditions, self.treatment_data.conditions_treated)
+        
         is_positive = score >= 0.7
-        is_concern = score < 0.5 and bool(self.scholarship_data.eligible_majors)
-
+        is_concern = score < 0.5 and bool(self.treatment_data.conditions_treated)
+        confidence_level = "high" if score >= 0.9 else "medium" if score >= 0.6 else "low"
+        
         if matches:
-            reason = f"Major/Field match: Your major aligns with eligible fields ({', '.join(matches)})."
-        elif self.scholarship_data.eligible_majors:
-            reason = f"Major/Field mismatch: Your major may not align with eligible fields ({', '.join(self.scholarship_data.eligible_majors)})."
-        elif not self.scholarship_data.eligible_majors and self.user_profile.major:
-             reason = "Major/Field: Scholarship is open to all majors; your major is recorded."
-
-        self._add_factor_score("major_field", score, reason, is_concern, is_positive)
-
-    def _score_academic_level(self):
-        score, matches = self._text_list_match_score(
-            [self.user_profile.academic_level] if self.user_profile.academic_level else [],
-            self.scholarship_data.eligible_academic_levels
-        )
-        reason = "Academic Level: Scholarship is open to all academic levels."
-        is_positive = score >= 0.7
-        is_concern = score < 0.5 and bool(self.scholarship_data.eligible_academic_levels)
-
-        if matches:
-            reason = f"Academic Level match: Your level ({', '.join(matches)}) is eligible."
-        elif self.scholarship_data.eligible_academic_levels:
-            reason = f"Academic Level mismatch: Your level may not align with eligible levels ({', '.join(self.scholarship_data.eligible_academic_levels)})."
-        elif not self.scholarship_data.eligible_academic_levels and self.user_profile.academic_level:
-            reason = "Academic Level: Scholarship is open to all levels; your level is recorded."
-
-        self._add_factor_score("academic_level", score, reason, is_concern, is_positive)
-
-    def _score_location(self):
-        # This is simplified. Real location matching can be complex (city, region, specific institutions).
-        # For now, just state-level.
-        user_locs = [self.user_profile.location_state] if self.user_profile.location_state else []
-        score, matches = self._text_list_match_score(user_locs, self.scholarship_data.eligible_locations_state)
-        
-        reason = "Location: No specific location requirements or match."
-        is_positive = score >= 0.7
-        is_concern = score < 0.5 and bool(self.scholarship_data.eligible_locations_state)
-
-        if matches:
-            reason = f"Location match: Your state ({', '.join(matches)}) is eligible."
-        elif self.scholarship_data.eligible_locations_state:
-            reason = f"Location mismatch: Your state may not be eligible ({', '.join(self.scholarship_data.eligible_locations_state)})."
-        elif not self.scholarship_data.eligible_locations_state and self.user_profile.location_state:
-            reason = "Location: Scholarship has no state restrictions; your location is noted."
-
-        self._add_factor_score("location", score, reason, is_concern, is_positive)
-
-    def _score_demographics(self):
-        score, matches = self._text_list_match_score(
-            self.user_profile.demographics,
-            self.scholarship_data.demographic_specific
-        )
-        reason = "Demographics: Scholarship is not specific, or no demographic match found."
-        is_positive = score >= 0.7
-        is_concern = score < 0.5 and bool(self.scholarship_data.demographic_specific) and bool(self.user_profile.demographics)
-
-        if matches:
-            reason = f"Demographic match: Aligns with your profile on ({', '.join(matches)})."
-        elif self.scholarship_data.demographic_specific and not self.user_profile.demographics:
-            reason = f"Demographics: Scholarship has specific criteria ({', '.join(self.scholarship_data.demographic_specific)}), but your demographic info is not in profile."
-            is_concern = True # User needs to update profile
-        elif self.scholarship_data.demographic_specific and self.user_profile.demographics:
-             reason = f"Demographics: Your profile may not match specific criteria ({', '.join(self.scholarship_data.demographic_specific)})."
-        
-        self._add_factor_score("demographics", score, reason, is_concern, is_positive)
-
-    def _score_keywords_and_description(self):
-        user_keywords = {kw.lower().strip() for kw in self.user_profile.interests_keywords if kw}
-        scholarship_kws = {kw.lower().strip() for kw in self.scholarship_data.keywords if kw}
-        
-        # Also consider words from description
-        description_words = set()
-        if self.scholarship_data.description:
-            description_words = {word.lower().strip(".,!?;:") for word in self.scholarship_data.description.split() if len(word) > 3}
-        
-        scholarship_all_terms = scholarship_kws.union(description_words)
-        
-        if not scholarship_all_terms and not user_keywords:
-            self._add_factor_score("keywords_description", 0.5, "Keywords/Description: Insufficient information from both profile and scholarship for keyword matching.", False, False)
-            return
-        if not scholarship_all_terms and user_keywords:
-            self._add_factor_score("keywords_description", 0.6, "Keywords/Description: Scholarship has no specific keywords; your interests are noted.", False, True)
-            return
-        if not user_keywords and scholarship_all_terms:
-            self._add_factor_score("keywords_description", 0.3, "Keywords/Description: Scholarship has keywords, but your interests are not specified in profile.", True, False)
-            return
-
-        common_keywords = user_keywords.intersection(scholarship_all_terms)
-        
-        score = 0.1
-        reason = "Keywords/Description: Low relevance based on keywords and description."
-        is_positive = False
-        is_concern = True
-
-        if common_keywords:
-            num_common = len(common_keywords)
-            # Simple scoring: more common keywords = better score
-            if num_common >= 3: score = 1.0
-            elif num_common == 2: score = 0.8
-            elif num_common == 1: score = 0.6
-            reason = f"Keywords/Description match: Found {num_common} matching terms ({', '.join(list(common_keywords)[:3])})."
-            is_positive = True
-            is_concern = False
-        
-        self._add_factor_score("keywords_description", score, reason, is_concern, is_positive)
-
-    def _score_application_complexity(self):
-        # Heuristic: "low", "medium", "high"
-        complexity_map = {"low": 0, "medium": 1, "high": 2}
-        user_pref_val = complexity_map.get(self.user_profile.preferred_complexity, 1)
-        scholarship_comp_val = complexity_map.get(self.scholarship_data.application_complexity_estimate, 1)
-
-        diff = abs(user_pref_val - scholarship_comp_val)
-        score = 1.0
-        reason = "Application Complexity: Aligns with your preference."
-        is_positive = True
-        is_concern = False
-
-        if diff == 1: # One level off
-            score = 0.7
-            reason = f"Application Complexity: Scholarship complexity ({self.scholarship_data.application_complexity_estimate}) is different from your preference ({self.user_profile.preferred_complexity})."
+            reason = f"Condition match: Treatment addresses your conditions ({', '.join(matches[:3])})."
+        elif self.treatment_data.conditions_treated and patient_conditions:
+            reason = f"Limited condition match: Treatment may not directly address your specific conditions."
+        elif not self.treatment_data.conditions_treated:
+            reason = "Condition match: Treatment scope not specified - may be general care."
+        else:
+            reason = "Condition match: Your medical conditions not specified in profile."
             is_concern = True
-            is_positive = False
-        elif diff == 2: # Two levels off
-            score = 0.3
-            reason = f"Application Complexity: Scholarship complexity ({self.scholarship_data.application_complexity_estimate}) significantly differs from your preference ({self.user_profile.preferred_complexity})."
-            is_concern = True
-            is_positive = False
+
+        self._add_factor_score("condition_match", score, reason, is_concern, is_positive, confidence_level)
+
+    def _score_age_eligibility(self):
+        """Score age eligibility and appropriateness"""
+        patient_age = self.patient_profile.age
+        min_age = self.treatment_data.min_age
+        max_age = self.treatment_data.max_age
         
-        # This factor has a negative weight, so a high score (1.0) means low complexity penalty.
-        self._add_factor_score("application_complexity", score, reason, is_concern, is_positive)
-
-
-    def _score_deadline_urgency(self):
-        deadline_str = self.scholarship_data.deadline
-        score = 0.5 # Neutral if no deadline
-        reason = "Deadline: No deadline specified or unable to parse."
+        score = 0.5  # Neutral if no age info
+        reason = "Age eligibility: No age restrictions specified."
         is_positive = False
         is_concern = False
+        confidence_level = "medium"
 
-        if deadline_str:
-            try:
-                deadline_date = datetime.strptime(deadline_str, "%Y-%m-%d")
-                today = datetime.now()
-                days_until = (deadline_date - today).days
-
-                if days_until < 0:
-                    score = 0.0
-                    reason = f"Deadline: Expired on {deadline_str} ({abs(days_until)} days ago)."
-                    is_concern = True
-                elif days_until <= VERY_URGENT_DEADLINE_DAYS:
-                    score = 0.3 # Low score because it's very urgent, might be too late
-                    reason = f"Deadline: Extremely urgent! Due in {days_until} day(s) ({deadline_str}). Immediate action required."
-                    is_concern = True
-                elif days_until <= URGENT_DEADLINE_DAYS:
-                    score = 0.6
-                    reason = f"Deadline: Urgent! Due in {days_until} days ({deadline_str}). Prompt action recommended."
-                    is_concern = True
-                elif IDEAL_DEADLINE_RANGE_DAYS[0] <= days_until <= IDEAL_DEADLINE_RANGE_DAYS[1]:
+        if patient_age is not None:
+            if min_age is not None and max_age is not None:
+                if min_age <= patient_age <= max_age:
                     score = 1.0
-                    reason = f"Deadline: Good timing. Due in {days_until} days ({deadline_str})."
+                    reason = f"Age eligibility: Perfect match (age {patient_age}, range {min_age}-{max_age})."
                     is_positive = True
-                elif days_until > IDEAL_DEADLINE_RANGE_DAYS[1]:
-                    score = 0.8
-                    reason = f"Deadline: Plenty of time. Due in {days_until} days ({deadline_str})."
+                    confidence_level = "high"
+                elif patient_age < min_age:
+                    if min_age - patient_age <= AGE_TOLERANCE_YEARS:
+                        score = 0.6
+                        reason = f"Age consideration: Slightly below minimum age ({patient_age} vs {min_age}), but may still be eligible."
+                    else:
+                        score = 0.1
+                        reason = f"Age restriction: Below minimum age requirement ({patient_age} vs {min_age})."
+                        is_concern = True
+                        confidence_level = "low"
+                elif patient_age > max_age:
+                    if patient_age - max_age <= AGE_TOLERANCE_YEARS:
+                        score = 0.6
+                        reason = f"Age consideration: Slightly above maximum age ({patient_age} vs {max_age}), but may still be eligible."
+                    else:
+                        score = 0.1
+                        reason = f"Age restriction: Above maximum age requirement ({patient_age} vs {max_age})."
+                        is_concern = True
+                        confidence_level = "low"
+            elif min_age is not None:
+                if patient_age >= min_age:
+                    score = 0.9
+                    reason = f"Age eligibility: Meets minimum age requirement ({patient_age} >= {min_age})."
                     is_positive = True
-                else: # days_until > URGENT_DEADLINE_DAYS but < IDEAL_DEADLINE_RANGE_DAYS[0]
-                    score = 0.7
-                    reason = f"Deadline: Approaching. Due in {days_until} days ({deadline_str})."
+                else:
+                    score = 0.2
+                    reason = f"Age restriction: Below minimum age ({patient_age} vs {min_age})."
+                    is_concern = True
+                    confidence_level = "low"
+            elif max_age is not None:
+                if patient_age <= max_age:
+                    score = 0.9
+                    reason = f"Age eligibility: Within maximum age limit ({patient_age} <= {max_age})."
                     is_positive = True
-
-            except ValueError:
-                reason = f"Deadline: Invalid date format ('{deadline_str}')."
-                score = 0.2
+                else:
+                    score = 0.2
+                    reason = f"Age restriction: Above maximum age ({patient_age} vs {max_age})."
+                    is_concern = True
+                    confidence_level = "low"
+            else:
+                score = 0.8
+                reason = f"Age eligibility: No age restrictions (patient age {patient_age})."
+                is_positive = True
+        else:
+            if min_age is not None or max_age is not None:
+                score = 0.3
+                reason = "Age eligibility: Treatment has age requirements, but your age is not in profile."
                 is_concern = True
+                confidence_level = "low"
+
+        self._add_factor_score("age_eligibility", score, reason, is_concern, is_positive, confidence_level)
+
+    def _score_location_accessibility(self):
+        """Score location and accessibility factors"""
+        distance = self.treatment_data.distance_miles
+        max_travel = self.patient_profile.max_travel_distance or PREFERRED_DISTANCE_MILES
         
-        self._add_factor_score("deadline_urgency", score, reason, is_concern, is_positive)
+        score = 0.5  # Neutral if no location info
+        reason = "Location: Distance information not available."
+        is_positive = False
+        is_concern = False
+        confidence_level = "medium"
 
-    def _score_data_quality(self):
-        # Simple check: award amount, deadline, and description present?
-        num_present_fields = 0
-        max_fields = 3
-        reasons = []
+        if distance is not None:
+            if distance <= PREFERRED_DISTANCE_MILES:
+                score = 1.0
+                reason = f"Location: Excellent - within {distance:.1f} miles (preferred range)."
+                is_positive = True
+                confidence_level = "high"
+            elif distance <= max_travel:
+                score = 0.7
+                reason = f"Location: Good - {distance:.1f} miles (within your travel preference of {max_travel} miles)."
+                is_positive = True
+            elif distance <= MAX_REASONABLE_DISTANCE_MILES:
+                score = 0.4
+                reason = f"Location: Manageable - {distance:.1f} miles (requires significant travel)."
+                is_concern = True
+            else:
+                score = 0.1
+                reason = f"Location: Very distant - {distance:.1f} miles (may be impractical)."
+                is_concern = True
+                confidence_level = "low"
 
-        if self.scholarship_data.award_amount and self.scholarship_data.award_amount.lower() not in ["varies", "not specified", "n/a", ""]:
-            num_present_fields += 1
+        # Check accessibility features if patient has mobility limitations
+        if self.patient_profile.mobility_limitations and self.treatment_data.accessibility_features:
+            accessibility_match = len(set(self.patient_profile.mobility_limitations) & 
+                                   set(self.treatment_data.accessibility_features))
+            if accessibility_match > 0:
+                score = min(1.0, score + 0.1)  # Bonus for accessibility
+                reason += f" Accessibility features available for your needs."
+                is_positive = True
+
+        self._add_factor_score("location_accessibility", score, reason, is_concern, is_positive, confidence_level)
+
+    def _score_insurance_coverage(self):
+        """Score insurance compatibility and coverage"""
+        patient_insurance = self.patient_profile.insurance_provider
+        accepted_insurance = self.treatment_data.accepted_insurance
+        
+        score = 0.5  # Neutral baseline
+        reason = "Insurance: Coverage information not available."
+        is_positive = False
+        is_concern = False
+        confidence_level = "medium"
+
+        if patient_insurance and accepted_insurance:
+            # Check for exact matches
+            if patient_insurance.lower() in [ins.lower() for ins in accepted_insurance]:
+                score = 1.0
+                reason = f"Insurance: Excellent - your insurance ({patient_insurance}) is accepted."
+                is_positive = True
+                confidence_level = "high"
+            else:
+                # Check for partial matches (e.g., "Blue Cross" in "Blue Cross Blue Shield")
+                partial_match = any(patient_insurance.lower() in ins.lower() or 
+                                  ins.lower() in patient_insurance.lower() 
+                                  for ins in accepted_insurance)
+                if partial_match:
+                    score = 0.7
+                    reason = f"Insurance: Likely covered - similar plan to accepted insurance."
+                    is_positive = True
+                else:
+                    score = 0.2
+                    reason = f"Insurance: May not be covered - your insurance ({patient_insurance}) not listed in accepted plans."
+                    is_concern = True
+                    confidence_level = "low"
+        elif not patient_insurance and accepted_insurance:
+            score = 0.3
+            reason = "Insurance: Treatment accepts specific insurance, but your plan is not specified."
+            is_concern = True
+        elif patient_insurance and not accepted_insurance:
+            score = 0.6
+            reason = "Insurance: Treatment's accepted insurance not specified - contact provider to verify."
+        elif "medicare" in self.treatment_data.description.lower() if self.treatment_data.description else False:
+            score = 0.8
+            reason = "Insurance: Appears to accept Medicare based on description."
+            is_positive = True
+
+        self._add_factor_score("insurance_coverage", score, reason, is_concern, is_positive, confidence_level)
+
+    def _score_treatment_type_match(self):
+        """Score how well treatment types match patient preferences"""
+        patient_prefs = self.patient_profile.preferred_treatment_types
+        treatment_types = self.treatment_data.treatment_types
+        
+        score, matches = self._text_list_match_score(patient_prefs, treatment_types)
+        
+        is_positive = score >= 0.7
+        is_concern = score < 0.4 and bool(patient_prefs)
+        confidence_level = "high" if score >= 0.8 else "medium"
+        
+        if matches:
+            reason = f"Treatment type: Matches your preferences ({', '.join(matches[:2])})."
+        elif not patient_prefs:
+            score = 0.7  # Neutral-positive if no preferences specified
+            reason = "Treatment type: No specific preferences noted in your profile."
+        elif treatment_types:
+            reason = f"Treatment type: Available types ({', '.join(treatment_types[:2])}) may not match your preferences."
         else:
-            reasons.append("Award amount is missing or vague.")
-        
-        if self.scholarship_data.deadline:
-            num_present_fields += 1
-        else:
-            reasons.append("Deadline is missing.")
+            reason = "Treatment type: Treatment approach not clearly specified."
 
-        if self.scholarship_data.description and len(self.scholarship_data.description) > 20: # Arbitrary length for "decent" description
-            num_present_fields += 1
-        else:
-            reasons.append("Description is very short or missing.")
-        
-        score = 0.2 + (0.8 * (num_present_fields / max_fields)) # Base score of 0.2
-        reason = f"Data Quality: {num_present_fields}/{max_fields} key fields (amount, deadline, description) are well-defined. "
-        if reasons:
-            reason += "Issues: " + " ".join(reasons)
-        
-        is_concern = score < 0.6
-        is_positive = score >= 0.8
-        self._add_factor_score("data_quality", score, reason, is_concern, is_positive)
+        self._add_factor_score("treatment_type_match", score, reason, is_concern, is_positive, confidence_level)
 
-    def _score_historical_success(self):
-        # Placeholder: In a real system, this would query a DB or use ML model
-        # For now, assume neutral
-        score = 0.5
-        reason = "Historical Success: Data not available for this factor."
-        self._add_factor_score("historical_success", score, reason)
+    def _score_provider_quality(self):
+        """Score provider quality and credentials"""
+        rating = self.treatment_data.provider_rating
+        certifications = self.treatment_data.specialty_certifications
+        
+        score = 0.5  # Neutral baseline
+        reason = "Provider quality: No rating or credential information available."
+        is_positive = False
+        is_concern = False
+        confidence_level = "low"
+
+        if rating is not None:
+            if rating >= 4.5:
+                score = 1.0
+                reason = f"Provider quality: Excellent rating ({rating}/5.0)."
+                is_positive = True
+                confidence_level = "high"
+            elif rating >= 4.0:
+                score = 0.8
+                reason = f"Provider quality: Very good rating ({rating}/5.0)."
+                is_positive = True
+                confidence_level = "high"
+            elif rating >= 3.5:
+                score = 0.6
+                reason = f"Provider quality: Good rating ({rating}/5.0)."
+                confidence_level = "medium"
+            elif rating >= 3.0:
+                score = 0.4
+                reason = f"Provider quality: Average rating ({rating}/5.0)."
+            else:
+                score = 0.2
+                reason = f"Provider quality: Below average rating ({rating}/5.0)."
+                is_concern = True
+
+        # Bonus for certifications
+        if certifications:
+            score = min(1.0, score + 0.1)
+            reason += f" Provider has specialty certifications: {', '.join(certifications[:2])}."
+            is_positive = True
+            confidence_level = "high"
+
+        self._add_factor_score("provider_quality", score, reason, is_concern, is_positive, confidence_level)
+
+    def _parse_cost_estimate(self, cost_str: str) -> Tuple[Optional[float], Optional[float]]:
+        """Parse cost estimate string to get min/max values"""
+        if not cost_str:
+            return None, None
+        
+        # Handle "Covered by insurance" or similar
+        if any(word in cost_str.lower() for word in ["covered", "free", "no cost"]):
+            return 0.0, 0.0
+        
+        # Extract numbers from cost string
+        numbers = re.findall(r'\$?[\d,]+', cost_str.replace(',', ''))
+        if not numbers:
+            return None, None
+        
+        # Convert to floats
+        try:
+            if len(numbers) == 1:
+                cost = float(numbers[0].replace('$', '').replace(',', ''))
+                return cost, cost
+            elif len(numbers) >= 2:
+                min_cost = float(numbers[0].replace('$', '').replace(',', ''))
+                max_cost = float(numbers[1].replace('$', '').replace(',', ''))
+                return min_cost, max_cost
+        except ValueError:
+            return None, None
+        
+        return None, None
+
+    def _score_cost_affordability(self):
+        """Score treatment cost affordability"""
+        cost_str = self.treatment_data.estimated_cost
+        patient_budget = self.patient_profile.budget_max
+        
+        score = 0.5  # Neutral baseline
+        reason = "Cost: No cost information available."
+        is_positive = False
+        is_concern = False
+        confidence_level = "low"
+
+        if cost_str:
+            min_cost, max_cost = self._parse_cost_estimate(cost_str)
+            
+            if min_cost == 0 and max_cost == 0:  # Covered by insurance
+                score = 1.0
+                reason = "Cost: Excellent - covered by insurance or free."
+                is_positive = True
+                confidence_level = "high"
+            elif min_cost is not None and max_cost is not None:
+                avg_cost = (min_cost + max_cost) / 2
+                
+                if patient_budget is not None:
+                    if avg_cost <= patient_budget:
+                        score = 1.0
+                        reason = f"Cost: Within budget - estimated ${avg_cost:,.0f} (budget: ${patient_budget:,.0f})."
+                        is_positive = True
+                        confidence_level = "high"
+                    elif avg_cost <= patient_budget * 1.2:  # 20% over budget
+                        score = 0.6
+                        reason = f"Cost: Slightly over budget - estimated ${avg_cost:,.0f} (budget: ${patient_budget:,.0f})."
+                        is_concern = True
+                    else:
+                        score = 0.2
+                        reason = f"Cost: Significantly over budget - estimated ${avg_cost:,.0f} (budget: ${patient_budget:,.0f})."
+                        is_concern = True
+                        confidence_level = "low"
+                else:
+                    # No budget specified, score based on general affordability
+                    if avg_cost < 1000:
+                        score = 0.8
+                        reason = f"Cost: Reasonable - estimated ${avg_cost:,.0f}."
+                        is_positive = True
+                    elif avg_cost < COST_CONCERN_THRESHOLD:
+                        score = 0.6
+                        reason = f"Cost: Moderate - estimated ${avg_cost:,.0f}."
+                    else:
+                        score = 0.3
+                        reason = f"Cost: High - estimated ${avg_cost:,.0f}. Consider insurance coverage."
+                        is_concern = True
+
+        self._add_factor_score("cost_affordability", score, reason, is_concern, is_positive, confidence_level)
 
     def calculate_confidence_score(self) -> float:
-        logger.info(f"Calculating confidence score for S:{self.scholarship_data.scholarship_id} U:{self.user_profile.user_id}")
-        self.match_details.factor_scores = [] # Reset previous calculations if any
+        """Calculate overall confidence score"""
+        logger.info(f"Calculating confidence score for treatment {self.treatment_data.treatment_id}")
+        
+        # Clear previous calculations
+        self.match_details.factor_scores = []
         self.raw_factor_values = {}
 
-        self._score_gpa()
-        self._score_major_field()
-        self._score_academic_level()
-        self._score_location()
-        self._score_demographics()
-        self._score_keywords_and_description()
-        self._score_application_complexity()
-        self._score_deadline_urgency()
-        self._score_data_quality()
-        self._score_historical_success() # Placeholder
+        # Score all factors
+        self._score_condition_match()
+        self._score_age_eligibility()
+        self._score_location_accessibility()
+        self._score_insurance_coverage()
+        self._score_treatment_type_match()
+        self._score_provider_quality()
+        self._score_cost_affordability()
 
+        # Calculate weighted score
         total_weighted_score = 0
         total_weight = 0
         
         for factor in self.match_details.factor_scores:
             total_weighted_score += factor.score * factor.weight
             total_weight += factor.weight
-            logger.debug(f"Factor: {factor.factor_name}, Raw Score: {factor.score:.2f}, Weight: {factor.weight:.2f}, Weighted: {factor.score * factor.weight:.2f}, Reason: {factor.reason}")
+            logger.debug(f"Factor: {factor.factor_name}, Score: {factor.score:.2f}, Weight: {factor.weight:.2f}")
 
-        if total_weight == 0: # Should not happen if WEIGHTS are defined
+        if total_weight == 0:
             overall_score_normalized = 0.0
         else:
-            # Normalize the score to be out of 100
             overall_score_normalized = (total_weighted_score / total_weight) * 100
+
+        # Ensure score is within 0-100 range
+        self.match_details.overall_score = round(max(0, min(overall_score_normalized, 100)), 2)
         
-        self.match_details.overall_score = round(max(0, min(overall_score_normalized, 100)), 2) # Ensure 0-100 range
         logger.info(f"Overall confidence score: {self.match_details.overall_score:.2f}%")
         return self.match_details.overall_score
 
-    def generate_match_explanation(self) -> str:
+    def _determine_match_level(self, score: float) -> str:
+        """Determine match level based on score"""
+        if score >= 85:
+            return "excellent"
+        elif score >= 70:
+            return "good"
+        elif score >= 50:
+            return "fair"
+        else:
+            return "poor"
+
+    def generate_summary_explanation(self) -> str:
+        """Generate a human-readable explanation of the match"""
         if not self.match_details.factor_scores:
-            self.calculate_confidence_score() # Ensure scores are calculated
+            self.calculate_confidence_score()
 
         score = self.match_details.overall_score
+        match_level = self._determine_match_level(score)
         
-        if score >= 80:
-            level = "very strong"
-        elif score >= 65:
-            level = "strong"
-        elif score >= 50:
-            level = "moderate"
-        elif score >= 35:
-            level = "potential"
-        else:
-            level = "less likely"
+        explanation = f"This treatment appears to be a {match_level} match ({score:.1f}%) for your needs. "
 
-        explanation = f"This scholarship appears to be a {level} match ({score:.1f}%) for you. "
-        
-        positive_highlights = [fs.reason for fs in self.match_details.factor_scores if fs.is_positive_match and fs.score * fs.weight > 0.03] # Highlight significant positive factors
-        if positive_highlights:
-            explanation += "Key strengths include: " + "; ".join(positive_highlights[:2]) + ". " # Show top 2
+        # Highlight top positive factors
+        positive_factors = [fs for fs in self.match_details.factor_scores 
+                          if fs.is_positive_match and fs.score >= 0.7]
+        if positive_factors:
+            top_positive = sorted(positive_factors, key=lambda x: x.score * x.weight, reverse=True)[:2]
+            explanation += "Key strengths: " + "; ".join([f.reason for f in top_positive]) + ". "
 
-        concern_highlights = [fs.reason for fs in self.match_details.factor_scores if fs.is_concern and fs.score * fs.weight < -0.02 or (fs.score < 0.4 and fs.weight > 0.05)] # Highlight significant concerns
-        if concern_highlights:
-            explanation += "Points to consider: " + "; ".join(concern_highlights[:2]) + ". "
-        
-        if score < 50 and not concern_highlights: # Low score but no obvious major concern flagged
-             explanation += "Several smaller factors contribute to a lower overall match score. "
+        # Highlight concerns
+        concerns = [fs for fs in self.match_details.factor_scores 
+                   if fs.is_concern and fs.score < 0.5]
+        if concerns:
+            top_concerns = sorted(concerns, key=lambda x: x.weight, reverse=True)[:2]
+            explanation += "Important considerations: " + "; ".join([f.reason for f in top_concerns]) + ". "
 
         return explanation.strip()
 
-    def get_matching_criteria(self) -> List[str]:
+    def get_key_strengths(self) -> List[str]:
+        """Get list of key matching strengths"""
         if not self.match_details.factor_scores:
             self.calculate_confidence_score()
         
-        return [fs.reason for fs in self.match_details.factor_scores if fs.is_positive_match and fs.score >= 0.7]
+        return [fs.reason for fs in self.match_details.factor_scores 
+                if fs.is_positive_match and fs.score >= 0.7]
 
-    def identify_potential_concerns(self) -> List[str]:
+    def get_potential_concerns(self) -> List[str]:
+        """Get list of potential concerns"""
         if not self.match_details.factor_scores:
             self.calculate_confidence_score()
         
-        concerns = [fs.reason for fs in self.match_details.factor_scores if fs.is_concern and fs.score < 0.6]
+        concerns = [fs.reason for fs in self.match_details.factor_scores 
+                   if fs.is_concern and fs.score < 0.6]
         
-        # Add a general concern if data quality is low
-        data_quality_factor = next((fs for fs in self.match_details.factor_scores if fs.factor_name == "data_quality"), None)
-        if data_quality_factor and data_quality_factor.score < 0.5:
-            concerns.append("The information available for this scholarship is limited, which may affect match accuracy.")
-            
+        # Add urgency-based concerns
+        urgency = self.patient_profile.treatment_urgency
+        wait_time = self.treatment_data.wait_time_days
+        
+        if urgency == "emergency" and wait_time and wait_time > 0:
+            concerns.append(f"Wait time of {wait_time} days may be too long for emergency treatment.")
+        elif urgency == "urgent" and wait_time and wait_time > 7:
+            concerns.append(f"Wait time of {wait_time} days may be longer than ideal for urgent treatment.")
+
         return concerns
 
-    def suggest_improvements_or_actions(self) -> List[str]:
+    def get_recommended_actions(self) -> List[str]:
+        """Get list of recommended actions"""
         if not self.match_details.factor_scores:
             self.calculate_confidence_score()
-            
-        suggestions = []
-        # Based on GPA
-        gpa_factor = next((fs for fs in self.match_details.factor_scores if fs.factor_name == "gpa"), None)
-        if gpa_factor and gpa_factor.is_concern:
-            if "your GPA is not in your profile" in gpa_factor.reason:
-                suggestions.append("Consider adding your GPA to your profile for more accurate matching.")
-            elif "slightly below" in gpa_factor.reason:
-                 suggestions.append("While your GPA is slightly below the minimum, some scholarships offer flexibility. It might be worth applying if other criteria are strong.")
         
-        # Based on missing profile info for specific scholarship criteria
-        for factor_name in ["major_field", "academic_level", "location", "demographics"]:
-            factor = next((fs for fs in self.match_details.factor_scores if fs.factor_name == factor_name), None)
-            profile_attr = getattr(self.user_profile, factor_name.split('_')[0] if factor_name != "major_field" else "major", None) # Simplified mapping
-            
-            if factor and factor.is_concern and not profile_attr: # If it's a concern because profile info is missing
-                 if f"your {factor_name.replace('_', ' ')} is not in your profile" in factor.reason or "not specified in profile" in factor.reason:
-                    suggestions.append(f"Adding your {factor_name.replace('_', ' ')} to your profile could improve match accuracy.")
-
-        # Based on deadline
-        deadline_factor = next((fs for fs in self.match_details.factor_scores if fs.factor_name == "deadline_urgency"), None)
-        if deadline_factor and deadline_factor.is_concern and "Extremely urgent" in deadline_factor.reason:
-            suggestions.append("This scholarship deadline is very soon. Prioritize this application if you intend to apply.")
-        elif deadline_factor and deadline_factor.is_concern and "Urgent!" in deadline_factor.reason:
-            suggestions.append("The deadline is approaching quickly. Plan your application process soon.")
-
-        if not suggestions and self.match_details.overall_score >= 50:
-            suggestions.append("This looks like a reasonable match. Review the scholarship details and consider applying.")
-        elif not suggestions and self.match_details.overall_score < 50:
-            suggestions.append("This may not be the strongest match. Focus on scholarships with higher alignment if available.")
-            
-        if self.scholarship_data.url:
-            suggestions.append(f"Always verify details on the official scholarship page: {self.scholarship_data.url}")
+        actions = []
+        
+        # Insurance-related actions
+        insurance_factor = next((fs for fs in self.match_details.factor_scores 
+                               if fs.factor_name == "insurance_coverage"), None)
+        if insurance_factor and insurance_factor.is_concern:
+            actions.append("Contact the provider to verify insurance coverage before scheduling.")
+        
+        # Cost-related actions
+        cost_factor = next((fs for fs in self.match_details.factor_scores 
+                          if fs.factor_name == "cost_affordability"), None)
+        if cost_factor and cost_factor.is_concern:
+            actions.append("Discuss payment options or financial assistance programs with the provider.")
+        
+        # Location-related actions
+        location_factor = next((fs for fs in self.match_details.factor_scores 
+                              if fs.factor_name == "location_accessibility"), None)
+        if location_factor and location_factor.is_concern:
+            actions.append("Consider transportation options or look for closer alternatives.")
+        
+        # General recommendations
+        if self.match_details.overall_score >= 70:
+            actions.append("This appears to be a strong match - consider scheduling a consultation.")
+        elif self.match_details.overall_score >= 50:
+            actions.append("Review the details carefully and contact the provider with any questions.")
         else:
-            suggestions.append("Official scholarship URL is missing; try to find it to verify details.")
-
-        return list(set(suggestions)) # Remove duplicates
-
-    def get_full_confidence_analysis(self) -> ConfidenceResult:
-        """
-        Performs all scoring and analysis, returning a comprehensive result.
-        This is the primary method to call after initializing the scorer.
-        """
-        final_score = self.calculate_confidence_score() # This populates self.match_details
+            actions.append("Consider exploring additional treatment options with better alignment.")
         
-        return ConfidenceResult(
-            user_id=self.user_profile.user_id,
-            scholarship_id=self.scholarship_data.scholarship_id,
-            scholarship_name=self.scholarship_data.name,
+        if self.treatment_data.website_url:
+            actions.append(f"Visit the provider's website for more information: {self.treatment_data.website_url}")
+        
+        return actions
+
+    def assess_urgency(self) -> str:
+        """Assess treatment urgency based on patient needs and wait times"""
+        patient_urgency = self.patient_profile.treatment_urgency
+        wait_time = self.treatment_data.wait_time_days or 0
+        
+        if patient_urgency == "emergency":
+            if wait_time == 0:
+                return "Immediate treatment available - excellent for emergency needs."
+            else:
+                return f"WARNING: {wait_time} day wait may be too long for emergency treatment."
+        elif patient_urgency == "urgent":
+            if wait_time <= 7:
+                return f"Wait time of {wait_time} days is acceptable for urgent treatment."
+            else:
+                return f"CONCERN: {wait_time} day wait may be longer than ideal for urgent treatment."
+        elif patient_urgency == "routine":
+            if wait_time <= 30:
+                return f"Wait time of {wait_time} days is reasonable for routine treatment."
+            else:
+                return f"Longer wait time of {wait_time} days for routine treatment."
+        else:  # elective
+            return f"Wait time of {wait_time} days for elective treatment - allows for planning."
+
+    def get_full_confidence_analysis(self) -> TreatmentConfidenceResult:
+        """
+        Perform complete analysis and return comprehensive results
+        """
+        final_score = self.calculate_confidence_score()
+        match_level = self._determine_match_level(final_score)
+        
+        return TreatmentConfidenceResult(
+            user_id=self.patient_profile.user_id,
+            treatment_id=self.treatment_data.treatment_id,
+            treatment_name=self.treatment_data.name,
+            provider_name=self.treatment_data.provider_name,
             confidence_score=final_score,
-            summary_explanation=self.generate_match_explanation(),
-            matching_criteria_details=self.get_matching_criteria(),
-            potential_concerns=self.identify_potential_concerns(),
-            suggested_actions=self.suggest_improvements_or_actions(),
+            match_level=match_level,
+            summary_explanation=self.generate_summary_explanation(),
+            key_strengths=self.get_key_strengths(),
+            potential_concerns=self.get_potential_concerns(),
+            recommended_actions=self.get_recommended_actions(),
+            urgency_assessment=self.assess_urgency(),
             raw_match_details=self.match_details
         )
 
 # --- Example Usage (for testing) ---
 if __name__ == "__main__":
-    # Sample User Profile
-    sample_user = UserProfileInput(
-        user_id="user123",
-        gpa=3.8,
-        major="Computer Science",
-        academic_level="Undergraduate",
+    # Sample Patient Profile
+    sample_patient = PatientProfileInput(
+        user_id="patient123",
+        age=45,
+        primary_condition="diabetes",
+        secondary_conditions=["hypertension"],
+        insurance_provider="Blue Cross Blue Shield",
+        insurance_plan_type="PPO",
+        location_zip="12345",
         location_state="California",
-        demographics=["first-generation", "hispanic"],
-        interests_keywords=["AI", "machine learning", "software development", "robotics"],
-        preferred_complexity="medium"
+        max_travel_distance=50,
+        budget_max=2000.0,
+        treatment_urgency="routine",
+        preferred_treatment_types=["endocrinology", "primary care"]
     )
 
-    # Sample Scholarship Data
-    strong_match_scholarship = ScholarshipDataInput(
-        scholarship_id="sch001",
-        name="Tech Innovators Scholarship",
-        min_gpa=3.5,
-        eligible_majors=["Computer Science", "Software Engineering", "AI"],
-        eligible_academic_levels=["Undergraduate"],
-        eligible_locations_state=["California", "New York"],
-        demographic_specific=["first-generation"],
-        keywords=["AI", "innovation", "technology", "coding"],
-        description="A scholarship for innovative undergraduate students in tech fields, especially those passionate about AI.",
-        application_complexity_estimate="medium",
-        deadline=(datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d"), # Due in 60 days
-        award_amount="$5,000",
-        url="http://example.com/techinnovators"
+    # Sample Treatment Data - Strong Match
+    strong_match_treatment = TreatmentDataInput(
+        treatment_id="treat001",
+        name="Comprehensive Diabetes Management Program",
+        provider_name="Regional Medical Center",
+        treatment_types=["endocrinology", "diabetes management"],
+        conditions_treated=["diabetes", "hypertension", "metabolic disorders"],
+        min_age=18,
+        max_age=80,
+        location_city="San Francisco",
+        location_state="California",
+        distance_miles=25.0,
+        accepted_insurance=["Blue Cross Blue Shield", "Aetna", "Medicare"],
+        estimated_cost="Covered by insurance",
+        wait_time_days=14,
+        provider_rating=4.8,
+        specialty_certifications=["Endocrinology Board Certified"],
+        description="Comprehensive diabetes care with personalized treatment plans"
     )
 
-    weak_match_scholarship = ScholarshipDataInput(
-        scholarship_id="sch002",
-        name="Arts & Humanities Grant",
-        min_gpa=3.0,
-        eligible_majors=["History", "Literature", "Philosophy"],
-        eligible_academic_levels=["Postgraduate"],
-        keywords=["arts", "humanities", "research", "writing"],
-        description="A grant for postgraduate students pursuing research in arts and humanities.",
-        application_complexity_estimate="high",
-        deadline=(datetime.now() + timedelta(days=10)).strftime("%Y-%m-%d"), # Due in 10 days
-        award_amount="$2,000",
-        url="http://example.com/artsgrant"
+    # Sample Treatment Data - Weak Match
+    weak_match_treatment = TreatmentDataInput(
+        treatment_id="treat002",
+        name="Emergency Surgery Center",
+        provider_name="City Hospital",
+        treatment_types=["emergency surgery", "trauma care"],
+        conditions_treated=["trauma", "emergency conditions"],
+        min_age=18,
+        location_city="Los Angeles",
+        location_state="California", 
+        distance_miles=150.0,
+        accepted_insurance=["Medicare", "Medicaid"],
+        estimated_cost="$15,000 - $50,000",
+        wait_time_days=0,
+        provider_rating=3.2,
+        description="Emergency surgical services"
     )
+
+    print("=== Testing Treatment Confidence Scorer ===\n")
     
-    missing_info_scholarship = ScholarshipDataInput(
-        scholarship_id="sch003",
-        name="General Study Award",
-        # min_gpa=None, # Missing GPA
-        eligible_majors=[], # Open to all
-        eligible_academic_levels=["Undergraduate", "Postgraduate"],
-        keywords=["general", "study", "academic"],
-        description="A general award for students.",
-        # deadline=None, # Missing deadline
-        award_amount=None, # Missing amount
-        url="http://example.com/generalaward"
-    )
-
-    logger.info("--- Scoring Strong Match ---")
-    scorer1 = ScholarshipConfidenceScorer(sample_user, strong_match_scholarship)
+    # Test strong match
+    print("--- Strong Match Analysis ---")
+    scorer1 = TreatmentConfidenceScorer(sample_patient, strong_match_treatment)
     result1 = scorer1.get_full_confidence_analysis()
-    print(f"Scholarship: {result1.scholarship_name}")
-    print(f"Confidence Score: {result1.confidence_score:.2f}%")
-    print(f"Explanation: {result1.summary_explanation}")
-    print(f"Matching Criteria: {result1.matching_criteria_details}")
-    print(f"Potential Concerns: {result1.potential_concerns}")
-    print(f"Suggested Actions: {result1.suggested_actions}\n")
-    # print(f"Raw Details: {result1.raw_match_details}\n")
-
-
-    logger.info("--- Scoring Weak Match ---")
-    scorer2 = ScholarshipConfidenceScorer(sample_user, weak_match_scholarship)
+    
+    print(f"Treatment: {result1.treatment_name}")
+    print(f"Provider: {result1.provider_name}")
+    print(f"Confidence Score: {result1.confidence_score:.1f}% ({result1.match_level})")
+    print(f"Summary: {result1.summary_explanation}")
+    print(f"Key Strengths: {result1.key_strengths}")
+    print(f"Concerns: {result1.potential_concerns}")
+    print(f"Recommended Actions: {result1.recommended_actions}")
+    print(f"Urgency Assessment: {result1.urgency_assessment}\n")
+    
+    # Test weak match
+    print("--- Weak Match Analysis ---")
+    scorer2 = TreatmentConfidenceScorer(sample_patient, weak_match_treatment)
     result2 = scorer2.get_full_confidence_analysis()
-    print(f"Scholarship: {result2.scholarship_name}")
-    print(f"Confidence Score: {result2.confidence_score:.2f}%")
-    print(f"Explanation: {result2.summary_explanation}")
-    print(f"Matching Criteria: {result2.matching_criteria_details}")
-    print(f"Potential Concerns: {result2.potential_concerns}")
-    print(f"Suggested Actions: {result2.suggested_actions}\n")
-
-    logger.info("--- Scoring Missing Info Match ---")
-    scorer3 = ScholarshipConfidenceScorer(sample_user, missing_info_scholarship)
-    result3 = scorer3.get_full_confidence_analysis()
-    print(f"Scholarship: {result3.scholarship_name}")
-    print(f"Confidence Score: {result3.confidence_score:.2f}%")
-    print(f"Explanation: {result3.summary_explanation}")
-    print(f"Matching Criteria: {result3.matching_criteria_details}")
-    print(f"Potential Concerns: {result3.potential_concerns}")
-    print(f"Suggested Actions: {result3.suggested_actions}\n")
-
-    # Test case: User with missing GPA
-    sample_user_no_gpa = UserProfileInput(
-        user_id="user_no_gpa",
-        major="Biology",
-        academic_level="Undergraduate"
-    )
-    scholarship_with_gpa_req = ScholarshipDataInput(
-        scholarship_id="sch_gpa_req",
-        name="Bio Scholars",
-        min_gpa=3.2
-    )
-    logger.info("--- Scoring User with No GPA vs Scholarship with GPA Req ---")
-    scorer4 = ScholarshipConfidenceScorer(sample_user_no_gpa, scholarship_with_gpa_req)
-    result4 = scorer4.get_full_confidence_analysis()
-    print(f"Scholarship: {result4.scholarship_name}")
-    print(f"Confidence Score: {result4.confidence_score:.2f}%")
-    print(f"Explanation: {result4.summary_explanation}")
-    print(f"Potential Concerns: {result4.potential_concerns}")
-    print(f"Suggested Actions: {result4.suggested_actions}\n")
+    
+    print(f"Treatment: {result2.treatment_name}")
+    print(f"Provider: {result2.provider_name}")
+    print(f"Confidence Score: {result2.confidence_score:.1f}% ({result2.match_level})")
+    print(f"Summary: {result2.summary_explanation}")
+    print(f"Key Strengths: {result2.key_strengths}")
+    print(f"Concerns: {result2.potential_concerns}")
+    print(f"Recommended Actions: {result2.recommended_actions}")
+    print(f"Urgency Assessment: {result2.urgency_assessment}")

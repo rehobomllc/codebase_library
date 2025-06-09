@@ -1,0 +1,556 @@
+{% extends "partials/layout.html" %}
+
+{% block title %}Server Error{% endblock %}
+{% block description %}We're experiencing technical difficulties. Our team has been notified and is working to resolve the issue.{% endblock %}
+{% block page_css %}errors{% endblock %}
+
+{% block body_class %}error-page error-500{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <!-- Error Illustration -->
+        <div class="error-illustration">
+            <div class="error-icon">
+                <i class="fas fa-tools" aria-hidden="true"></i>
+            </div>
+            <div class="error-waves">
+                <div class="wave wave-1"></div>
+                <div class="wave wave-2"></div>
+                <div class="wave wave-3"></div>
+            </div>
+        </div>
+        
+        <!-- Error Message -->
+        <div class="error-message">
+            <div class="error-code">500</div>
+            <h1 class="error-title">Something Went Wrong</h1>
+            <p class="error-subtitle">
+                We're experiencing technical difficulties on our end. 
+                Our team has been automatically notified and is working to fix this issue.
+            </p>
+        </div>
+        
+        <!-- Incident Details -->
+        <div class="incident-info">
+            <div class="incident-id">
+                <small>Incident ID: <code>{{ incident_id or 'ERR-' + timestamp or 'UNKNOWN' }}</code></small>
+            </div>
+            <div class="incident-time">
+                <small>Time: <span id="error-timestamp">{{ error_time or 'Just now' }}</span></small>
+            </div>
+        </div>
+        
+        <!-- Recovery Actions -->
+        <div class="error-actions">
+            <div class="action-grid">
+                <button onclick="window.location.reload()" class="action-card primary">
+                    <div class="action-icon">
+                        <i class="fas fa-redo" aria-hidden="true"></i>
+                    </div>
+                    <h3>Try Again</h3>
+                    <p>Reload the page</p>
+                </button>
+                
+                <a href="/" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-home" aria-hidden="true"></i>
+                    </div>
+                    <h3>Go Home</h3>
+                    <p>Return to the homepage</p>
+                </a>
+                
+                <a href="/treatment-search" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                    </div>
+                    <h3>Find Treatment</h3>
+                    <p>Search for care options</p>
+                </a>
+                
+                <a href="/help" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-life-ring" aria-hidden="true"></i>
+                    </div>
+                    <h3>Get Support</h3>
+                    <p>Contact our support team</p>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Crisis Support -->
+        <div class="error-crisis">
+            <div class="crisis-card">
+                <h3><i class="fas fa-heart" aria-hidden="true"></i> Need Immediate Help?</h3>
+                <p>If you're experiencing a mental health crisis, help is available now.</p>
+                <div class="crisis-actions">
+                    <a href="tel:988" class="crisis-button">
+                        <i class="fas fa-phone" aria-hidden="true"></i>
+                        Call 988 - Crisis Lifeline
+                    </a>
+                    <a href="tel:911" class="crisis-button emergency">
+                        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                        Call 911 - Emergency
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Troubleshooting Info -->
+        <div class="troubleshooting">
+            <h3>While You Wait</h3>
+            <div class="troubleshooting-grid">
+                <div class="troubleshooting-item">
+                    <i class="fas fa-clock" aria-hidden="true"></i>
+                    <div>
+                        <h4>Wait a Moment</h4>
+                        <p>The issue might resolve itself in a few minutes.</p>
+                    </div>
+                </div>
+                
+                <div class="troubleshooting-item">
+                    <i class="fas fa-wifi" aria-hidden="true"></i>
+                    <div>
+                        <h4>Check Connection</h4>
+                        <p>Ensure your internet connection is stable.</p>
+                    </div>
+                </div>
+                
+                <div class="troubleshooting-item">
+                    <i class="fas fa-browser" aria-hidden="true"></i>
+                    <div>
+                        <h4>Clear Cache</h4>
+                        <p>Try clearing your browser cache and cookies.</p>
+                    </div>
+                </div>
+                
+                <div class="troubleshooting-item">
+                    <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+                    <div>
+                        <h4>Try Mobile</h4>
+                        <p>Switch to a different device or browser.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Technical Details (Collapsible) -->
+        <div class="error-details">
+            <button type="button" 
+                    class="error-details-toggle" 
+                    aria-expanded="false" 
+                    aria-controls="error-details-content"
+                    onclick="toggleErrorDetails()">
+                <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                Show Technical Details
+            </button>
+            <div id="error-details-content" class="error-details-content" aria-hidden="true">
+Error Type: {{ error_type or 'Internal Server Error' }}
+Timestamp: {{ error_timestamp or 'N/A' }}
+Request ID: {{ request_id or 'N/A' }}
+User Agent: {{ user_agent or 'N/A' }}
+IP Address: {{ client_ip or 'N/A' }}
+Referrer: {{ referrer or 'N/A' }}
+{% if error_details %}
+Stack Trace: 
+{{ error_details }}
+{% endif %}
+            </div>
+        </div>
+        
+        <!-- Report Problem -->
+        <div class="error-report">
+            <p class="report-text">
+                Problem persisting? 
+                <a href="/feedback?subject=500 Error&incident_id={{ incident_id or 'UNKNOWN' }}&timestamp={{ error_timestamp or '' }}" 
+                   class="report-link">
+                    Report this issue
+                </a>
+                with the incident ID above.
+            </p>
+        </div>
+        
+        <!-- Status Updates -->
+        <div class="status-updates" id="status-updates">
+            <h3>System Status</h3>
+            <div class="status-item">
+                <span class="status-indicator checking"></span>
+                <span>Checking system status...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 500 Error Specific Styles */
+.incident-info {
+    background: var(--bg-tertiary, #f3f4f6);
+    border: 1px solid var(--border-light, #e5e7eb);
+    border-radius: var(--radius-lg, 0.5rem);
+    padding: var(--space-4, 1rem);
+    margin: var(--space-6, 1.5rem) 0;
+    text-align: center;
+    font-family: var(--font-family-mono);
+}
+
+.incident-id, .incident-time {
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.incident-id code {
+    background: var(--primary-50, #eff6ff);
+    color: var(--primary-color, #2563eb);
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-radius: var(--radius-md, 0.375rem);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: var(--font-semibold, 600);
+}
+
+/* Troubleshooting Section */
+.troubleshooting {
+    margin: var(--space-8, 2rem) 0;
+    text-align: left;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.troubleshooting h3 {
+    font-size: var(--text-lg, 1.125rem);
+    font-weight: var(--font-semibold, 600);
+    color: var(--text-primary, #111827);
+    margin: 0 0 var(--space-4, 1rem) 0;
+    text-align: center;
+}
+
+.troubleshooting-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4, 1rem);
+}
+
+.troubleshooting-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-4, 1rem);
+    background: white;
+    border: 1px solid var(--border-light, #e5e7eb);
+    border-radius: var(--radius-lg, 0.5rem);
+    box-shadow: var(--shadow-sm);
+}
+
+.troubleshooting-item i {
+    color: var(--secondary-color, #10b981);
+    font-size: var(--text-lg, 1.125rem);
+    margin-top: var(--space-1, 0.25rem);
+    flex-shrink: 0;
+}
+
+.troubleshooting-item h4 {
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: var(--font-semibold, 600);
+    color: var(--text-primary, #111827);
+    margin: 0 0 var(--space-1, 0.25rem) 0;
+}
+
+.troubleshooting-item p {
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--text-secondary, #6b7280);
+    margin: 0;
+    line-height: var(--leading-relaxed, 1.625);
+}
+
+/* Status Updates */
+.status-updates {
+    margin: var(--space-6, 1.5rem) 0;
+    padding: var(--space-4, 1rem);
+    background: var(--bg-secondary, #f9fafb);
+    border: 1px solid var(--border-light, #e5e7eb);
+    border-radius: var(--radius-lg, 0.5rem);
+    text-align: left;
+}
+
+.status-updates h3 {
+    font-size: var(--text-base, 1rem);
+    font-weight: var(--font-semibold, 600);
+    color: var(--text-primary, #111827);
+    margin: 0 0 var(--space-3, 0.75rem) 0;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--text-secondary, #6b7280);
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full, 9999px);
+    flex-shrink: 0;
+}
+
+.status-indicator.checking {
+    background: var(--warning-color, #f59e0b);
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.operational {
+    background: var(--success-color, #10b981);
+}
+
+.status-indicator.degraded {
+    background: var(--warning-color, #f59e0b);
+}
+
+.status-indicator.down {
+    background: var(--error-color, #ef4444);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Error Details Toggle */
+.error-details-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    background: none;
+    border: none;
+    color: var(--primary-color, #2563eb);
+    font-size: var(--text-sm, 0.875rem);
+    cursor: pointer;
+    text-decoration: none;
+    margin-bottom: var(--space-3, 0.75rem);
+    transition: all var(--duration-150, 150ms) var(--ease-out);
+}
+
+.error-details-toggle:hover {
+    color: var(--primary-dark, #1d4ed8);
+}
+
+.error-details-toggle i {
+    transition: transform var(--duration-150, 150ms) var(--ease-out);
+}
+
+.error-details-toggle[aria-expanded="true"] i {
+    transform: rotate(90deg);
+}
+
+.error-details-toggle[aria-expanded="true"]::after {
+    content: " (Hide)";
+}
+
+.error-details-toggle[aria-expanded="false"]::after {
+    content: " (Show)";
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .troubleshooting-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-3, 0.75rem);
+    }
+    
+    .troubleshooting-item {
+        padding: var(--space-3, 0.75rem);
+    }
+    
+    .incident-info {
+        margin: var(--space-4, 1rem) 0;
+        padding: var(--space-3, 0.75rem);
+    }
+}
+
+/* Auto-refresh functionality */
+.auto-refresh-info {
+    text-align: center;
+    margin-top: var(--space-4, 1rem);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--text-secondary, #6b7280);
+}
+
+.refresh-countdown {
+    font-weight: var(--font-semibold, 600);
+    color: var(--primary-color, #2563eb);
+}
+</style>
+
+<script>
+// 500 Error Page JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Track 500 errors for analytics
+    if (typeof gtag === 'function') {
+        gtag('event', 'server_error', {
+            'event_category': 'Error',
+            'event_label': window.location.pathname,
+            'value': 1
+        });
+    }
+    
+    // Update timestamp to local time
+    const timestampElement = document.getElementById('error-timestamp');
+    if (timestampElement && timestampElement.textContent === 'Just now') {
+        timestampElement.textContent = new Date().toLocaleString();
+    }
+    
+    // Check system status
+    checkSystemStatus();
+    
+    // Auto-refresh mechanism (after 30 seconds)
+    setupAutoRefresh();
+    
+    // Track recovery actions
+    const actionCards = document.querySelectorAll('.action-card');
+    actionCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const actionType = this.querySelector('h3')?.textContent || 'Unknown';
+            
+            if (typeof gtag === 'function') {
+                gtag('event', '500_recovery_action', {
+                    'event_category': 'Recovery',
+                    'event_label': actionType
+                });
+            }
+        });
+    });
+});
+
+function toggleErrorDetails() {
+    const toggle = document.querySelector('.error-details-toggle');
+    const content = document.getElementById('error-details-content');
+    const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+    
+    toggle.setAttribute('aria-expanded', !isExpanded);
+    content.setAttribute('aria-hidden', isExpanded);
+    
+    if (!isExpanded) {
+        content.style.display = 'block';
+        toggle.innerHTML = toggle.innerHTML.replace('Show', 'Hide');
+    } else {
+        content.style.display = 'none';
+        toggle.innerHTML = toggle.innerHTML.replace('Hide', 'Show');
+    }
+}
+
+async function checkSystemStatus() {
+    const statusContainer = document.getElementById('status-updates');
+    const statusItem = statusContainer.querySelector('.status-item');
+    
+    try {
+        const response = await fetch('/api/health', {
+            method: 'GET',
+            timeout: 5000
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            updateStatusDisplay(data.status || 'operational');
+        } else {
+            updateStatusDisplay('degraded');
+        }
+    } catch (error) {
+        updateStatusDisplay('down');
+    }
+}
+
+function updateStatusDisplay(status) {
+    const statusItem = document.querySelector('.status-item');
+    const indicator = statusItem.querySelector('.status-indicator');
+    const text = statusItem.querySelector('span:last-child');
+    
+    indicator.className = `status-indicator ${status}`;
+    
+    const statusMessages = {
+        operational: 'All systems operational',
+        degraded: 'Some services experiencing issues',
+        down: 'Multiple systems affected',
+        checking: 'Checking system status...'
+    };
+    
+    text.textContent = statusMessages[status] || 'Status unknown';
+}
+
+function setupAutoRefresh() {
+    let countdown = 30;
+    const refreshInfo = document.createElement('div');
+    refreshInfo.className = 'auto-refresh-info';
+    refreshInfo.innerHTML = `
+        <p>Page will automatically refresh in <span class="refresh-countdown">${countdown}</span> seconds</p>
+        <button onclick="cancelAutoRefresh()" class="text-primary-color text-sm underline">Cancel auto-refresh</button>
+    `;
+    
+    document.querySelector('.error-content').appendChild(refreshInfo);
+    
+    const interval = setInterval(() => {
+        countdown--;
+        const countdownSpan = refreshInfo.querySelector('.refresh-countdown');
+        if (countdownSpan) {
+            countdownSpan.textContent = countdown;
+        }
+        
+        if (countdown <= 0) {
+            clearInterval(interval);
+            window.location.reload();
+        }
+    }, 1000);
+    
+    // Store interval ID for cancellation
+    window.autoRefreshInterval = interval;
+}
+
+function cancelAutoRefresh() {
+    if (window.autoRefreshInterval) {
+        clearInterval(window.autoRefreshInterval);
+        const refreshInfo = document.querySelector('.auto-refresh-info');
+        if (refreshInfo) {
+            refreshInfo.innerHTML = '<p class="text-sm text-gray-500">Auto-refresh cancelled</p>';
+        }
+    }
+}
+
+// Retry mechanism with exponential backoff
+let retryAttempts = 0;
+const maxRetries = 3;
+
+function retryRequest() {
+    if (retryAttempts < maxRetries) {
+        const delay = Math.pow(2, retryAttempts) * 1000; // Exponential backoff
+        retryAttempts++;
+        
+        setTimeout(() => {
+            window.location.reload();
+        }, delay);
+    }
+}
+
+// Network connectivity check
+function checkConnectivity() {
+    if (navigator.onLine) {
+        // Online - try to reach our server
+        fetch('/api/ping', { method: 'HEAD', timeout: 3000 })
+            .then(response => {
+                if (response.ok) {
+                    // Server is reachable, safe to refresh
+                    window.location.reload();
+                }
+            })
+            .catch(() => {
+                // Server still unreachable
+                console.log('Server still unreachable');
+            });
+    }
+}
+
+// Listen for network status changes
+window.addEventListener('online', checkConnectivity);
+window.addEventListener('offline', () => {
+    updateStatusDisplay('down');
+});
+</script>
+{% endblock %} 
