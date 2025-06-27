@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treatment Facility Intake</title>
+    <link rel="stylesheet" href="{{ request.url_for('static', path='/onboarding.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+    <div id="onboarding-container">
+        <div id="progress-bar"><div id="progress"></div></div>
+        <div id="progress-text">Step 1 of 6</div>
+        <form id="onboarding-form">
+            <!-- Panel 1: Name, Email, Location -->
+            <div class="onboarding-panel" id="panel-1">
+                <h2>Welcome! Let's get started.</h2>
+                <label for="name">Your Name</label>
+                <input type="text" id="name" name="name" required>
+                <label for="email">Your Email</label>
+                <input type="email" id="email" name="email" required placeholder="you@email.com">
+                <label for="location">Where are you located? (City, State, or Country)</label>
+                <input type="text" id="location" name="location" required>
+                <button type="button" class="next-btn">Next</button>
+            </div>
+            <!-- Panel 2: Treatment Type -->
+            <div class="onboarding-panel" id="panel-2">
+                <h2>What kind of treatment are you looking for?</h2>
+                <div id="treatment-type-chips">
+                    <span class="chip" data-value="Detox">Detox</span>
+                    <span class="chip" data-value="Inpatient Rehab">Inpatient Rehab</span>
+                    <span class="chip" data-value="Outpatient Program">Outpatient Program</span>
+                    <span class="chip" data-value="Mental-health Therapy">Mental-health Therapy</span>
+                    <span class="chip" data-value="Dual-diagnosis">Dual-diagnosis</span>
+                    <span class="chip" data-value="Other">Other</span>
+                </div>
+                <button type="button" class="back-btn">Back</button>
+                <button type="button" class="next-btn" disabled>Next</button>
+            </div>
+            <!-- Panel 3: Payment Method -->
+            <div class="onboarding-panel" id="panel-3">
+                <h2>How will you pay for treatment?</h2>
+                <div id="payment-method-chips">
+                    <span class="chip" data-value="Self-pay">Self-pay</span>
+                    <span class="chip" data-value="Medicaid">Medicaid</span>
+                    <span class="chip" data-value="Medicare">Medicare</span>
+                    <span class="chip" data-value="Private Insurance">Private Insurance</span>
+                    <span class="chip" data-value="Uninsured">Uninsured</span>
+                </div>
+                <button type="button" class="back-btn">Back</button>
+                <button type="button" class="next-btn" disabled>Next</button>
+            </div>
+            <!-- Panel 4: Insurance Provider (conditional) -->
+            <div class="onboarding-panel" id="panel-4">
+                <h2>Which insurance provider do you have?</h2>
+                <input type="text" id="insurance_provider" name="insurance_provider" placeholder="e.g. Blue Cross, Aetna, Kaiser">
+                <div style="font-size:0.95em; color:#666; margin-bottom:10px;">If you do not have insurance or it's not applicable, type "None".</div>
+                <button type="button" class="back-btn">Back</button>
+                <button type="button" class="next-btn">Next</button>
+            </div>
+            <!-- Panel 5: Special Needs/Qualifications -->
+            <div class="onboarding-panel" id="panel-5">
+                <h2>Do you have any special needs or qualifications?</h2>
+                <div id="special-needs-chips">
+                    <span class="chip" data-value="Veteran">Veteran</span>
+                    <span class="chip" data-value="Adolescent">Adolescent</span>
+                    <span class="chip" data-value="LGBTQ+">LGBTQ+</span>
+                    <span class="chip" data-value="Co-occurring Disorders">Co-occurring Disorders</span>
+                    <span class="chip" id="add-special-need-chip">+ Add your own</span>
+                </div>
+                <input type="text" id="custom-special-need-input" placeholder="Type and press Enter" style="display:none; margin-top:12px;">
+                <button type="button" class="back-btn">Back</button>
+                <button type="button" class="next-btn">Next</button>
+            </div>
+            <!-- Panel 6: Review & Submit -->
+            <div class="onboarding-panel" id="panel-6">
+                <h2>Review your information</h2>
+                <div id="review-info"></div>
+                <button type="button" class="back-btn">Back</button>
+                <button type="submit" id="start-search-btn">Submit</button>
+            </div>
+        </form>
+        <div id="loading-bar" style="display:none;">Submitting …</div>
+    </div>
+    <script src="{{ request.url_for('static', path='/onboarding.js') }}"></script>
+</body>
+</html> 

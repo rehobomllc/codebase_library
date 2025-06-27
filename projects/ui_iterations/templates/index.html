@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Agent Chat</title>
+    <link rel="stylesheet" href="{{ request.url_for('static', path='/style.css') }}">
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-header">Multi-Toolkit AI Assistant</div>
+        <div id="chat-window"></div>
+        <div id="crawl-info-container" style="display: none; padding: 10px; background-color: #f0f0f0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
+            <h4>Crawl Status</h4>
+            <pre id="crawl-status-data" style="white-space: pre-wrap; word-wrap: break-word;">Waiting for crawl to start...</pre>
+        </div>
+        <div id="input-area">
+            <input type="text" id="user-id-input" placeholder="Enter User ID (e.g., user@example.com)">
+            <input type="text" id="message-input" placeholder="Type your message...">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const userIdInput = document.getElementById('user-id-input');
+
+        let currentUserId = null; // Store userId for SSE
+        let eventSource = null;
+        let currentCrawlId = null;
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function appendMessage(text, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender + '-message');
+            
+            if (sender === 'auth') {
+                // Handle HTML content for auth messages
+                messageElement.innerHTML = text; // Be cautious with innerHTML if text is not controlled
+            } else {
+                messageElement.textContent = text;
+            }
+            
+            chatWindow.appendChild(messageElement);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const messageText = messageInput.value.trim();
+            const userId = userIdInput.value.trim();
+
+            if (!messageText) return;
+            if (!userId) {
+                appendMessage('Please enter a User ID to continue.', 'agent');
+                return;
+            }
+            currentUserId = userId; // Store for use in SSE connection
+
+            appendMessage(messageText, 'user');
+            messageInput.value = '';
+            userIdInput.disabled = true; // Disable after first message for session consistency
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: messageText, user_id: userId }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    appendMessage(`Error: ${errorData.error || 'Something went wrong.'}`, 'agent');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.crawl_id && data.crawl_id !== currentCrawlId) {
+                    console.log("New crawl detected, crawl_id:", data.crawl_id);
+                    currentCrawlId = data.crawl_id;
+                    document.getElementById('crawl-info-container').style.display = 'block';
+                    document.getElementById('crawl-status-data').textContent = 'Crawl initiated with ID: ' + currentCrawlId + '. Waiting for updates...';
+                    connectToCrawlStream(currentUserId, currentCrawlId);
+                } else if (data.crawl_id && data.crawl_id === currentCrawlId){
+                    console.log("Continuing to monitor existing crawl_id:", currentCrawlId);
+                    // If for some reason SSE stopped and we got the same crawl_id, ensure connection
+                    if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+                        connectToCrawlStream(currentUserId, currentCrawlId);
+                    }
+                }
+
+                if (data.auth_url) {
+                    appendMessage(
+                        `Authorization required: <a href="${data.auth_url}" target="_blank">Click here to authorize</a>. ` +
+                        `After authorizing, please try your request again.`,
+                         'auth'
+                    );
+                } else if (data.reply) {
+                    appendMessage(data.reply, 'agent');
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                appendMessage('Error communicating with the server. Check console.', 'agent');
+            }
+        }
+
+        function connectToCrawlStream(userId, crawlId) {
+            if (eventSource) {
+                console.log("Closing existing EventSource connection.");
+                eventSource.close();
+            }
+
+            console.log(`Connecting to crawl stream for user: ${userId}, crawl: ${crawlId}`);
+            const crawlStatusDataElement = document.getElementById('crawl-status-data');
+            
+            eventSource = new EventSource(`/crawl_updates?user_id=${encodeURIComponent(userId)}&crawl_id=${encodeURIComponent(crawlId)}`);
+
+            eventSource.onopen = function() {
+                console.log("SSE connection opened for crawl updates.");
+                crawlStatusDataElement.textContent = "Connected to crawl status stream. Waiting for data...";
+            };
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const crawlData = JSON.parse(event.data);
+                    console.log("Crawl update received:", crawlData);
+                    
+                    let statusText = "Crawl Status Update:\n";
+                    if (crawlData.error) {
+                        statusText += `Error: ${crawlData.error}\n`;
+                    }
+                    if (crawlData.status) {
+                        statusText += `Status: ${crawlData.status}\n`;
+                    }
+                    if (crawlData.reason) {
+                        statusText += `Reason: ${crawlData.reason}\n`;
+                    }
+
+                    // Display more detailed fields if available (common for Arcade Web.GetCrawlStatus)
+                    if (crawlData.urls_discovered !== undefined) statusText += `URLs Discovered: ${crawlData.urls_discovered}\n`;
+                    if (crawlData.urls_processed !== undefined) statusText += `URLs Processed: ${crawlData.urls_processed}\n`;
+                    if (crawlData.urls_queued !== undefined) statusText += `URLs Queued: ${crawlData.urls_queued}\n`;
+                    if (crawlData.urls_failed !== undefined) statusText += `URLs Failed: ${crawlData.urls_failed}\n`;
+                    if (crawlData.current_url) statusText += `Currently Processing: ${crawlData.current_url}\n`;
+                    if (crawlData.message) statusText += `Message: ${crawlData.message}\n`;
+                    // Add more fields as needed based on actual tool output
+                    
+                    crawlStatusDataElement.textContent = statusText;
+
+                    const terminalStates = ["COMPLETED", "FAILED", "CANCELLED", "ERROR", "TERMINATED"];
+                    if (crawlData.status && terminalStates.includes(crawlData.status.toUpperCase())) {
+                        console.log("Crawl finished or stream terminated. Closing SSE connection.");
+                        eventSource.close();
+                        eventSource = null;
+                        currentCrawlId = null; // Reset currentCrawlId
+                        // Optionally hide the crawl info container after a delay or keep it with final status
+                        // document.getElementById('crawl-info-container').style.display = 'none'; 
+                    }
+                } catch (e) {
+                    console.error("Error parsing SSE data:", e);
+                    crawlStatusDataElement.textContent = "Error processing crawl update: " + event.data;
+                }
+            };
+
+            eventSource.onerror = function(err) {
+                console.error('EventSource failed:', err);
+                crawlStatusDataElement.textContent = "Error connecting to crawl status stream. Will not receive further updates for this crawl.";
+                if (eventSource) {
+                    eventSource.close();
+                }
+                eventSource = null;
+                currentCrawlId = null; // Reset, as we can't monitor it anymore
+                // Optionally hide the crawl info container
+                // document.getElementById('crawl-info-container').style.display = 'none'; 
+            };
+        }
+    </script>
+</body>
+</html> 

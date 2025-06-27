@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treatment Dashboard</title>
+    <link rel="stylesheet" href="{{ request.url_for('static', path='/dashboard.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="{{ request.url_for('static', path='/dashboard.js') }}" defer></script>
+</head>
+<body>
+    <div id="dashboard-container" data-user-id="{{ user_id }}">
+        <!-- Top Ribbon -->
+        <div id="top-ribbon">
+            <span id="greeting">Hi {{ user.name }}, here's your snapshot:</span>
+            <ul id="dashboard-tabs">
+                <li><button class="tab-btn" data-tab="facilities">Facilities</button></li>
+                <li><button class="tab-btn" data-tab="insurance">Insurance</button></li>
+                <li><button class="tab-btn" data-tab="contacts">Contacts</button></li>
+                <li><button class="tab-btn" data-tab="timeline">Timeline</button></li>
+            </ul>
+            <a id="settings-link" href="/settings">
+                <span class="icon-settings"></span>
+            </a>
+        </div>
+
+        <!-- Main Content Area Wrapper -->
+        <div class="dashboard-content-area">
+            <!-- Main Canvas -->
+            <main id="dashboard-main">
+                <section id="facilities-panel" class="dashboard-panel">
+                    <h2>Treatment Facilities</h2>
+                    <div id="search-status" style="margin-top: 15px; margin-bottom: 15px;"></div>
+                    <div id="initial-search-panel">
+                        <h3>Ready to find treatment facilities?</h3>
+                        <p>Let our AI assistant search for facilities based on your profile.</p>
+                        <button id="start-search-btn" class="cta-button">Start My Search</button>
+                    </div>
+                    <div id="facility-items-container">
+                        {% if facilities %}
+                            <div class="facility-list">
+                                {% for facility in facilities %}
+                                    <div class="facility-card">
+                                        <h3>{{ facility.name or facility.title }}</h3>
+                                        <p>{{ facility.description }}</p>
+                                        {% if facility.address %}<p><b>Address:</b> {{ facility.address }}</p>{% endif %}
+                                        {% if facility.phone %}<p><b>Phone:</b> {{ facility.phone }}</p>{% endif %}
+                                        {% if facility.treatment_types %}<p><b>Treatment Types:</b> {{ facility.treatment_types|join(', ') }}</p>{% endif %}
+                                        {% if facility.payment_methods %}<p><b>Payment Methods:</b> {{ facility.payment_methods|join(', ') }}</p>{% endif %}
+                                        {% if facility.insurance_accepted %}<p><b>Insurance Accepted:</b> {{ facility.insurance_accepted|join(', ') }}</p>{% endif %}
+                                        {% if facility.special_programs %}<p><b>Special Programs:</b> {{ facility.special_programs|join(', ') }}</p>{% endif %}
+                                        {% if facility.url %}<a href="{{ facility.url }}" target="_blank">Visit Website</a>{% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p>No facilities found matching your criteria at this time.</p>
+                        {% endif %}
+                    </div>
+                </section>
+                <section id="insurance-panel" class="dashboard-panel" hidden>
+                    <h2>Insurance</h2>
+                    <div id="insurance-status-panel">
+                        <p>Insurance verification and status tracking coming soon.</p>
+                    </div>
+                </section>
+                <section id="calendar-panel" class="dashboard-panel" hidden>
+                    <h2>Contacts</h2>
+                    <div id="contacts-panel">
+                        <p>Contact status and follow-up tracking coming soon.</p>
+                    </div>
+                </section>
+                <section id="timeline-panel" class="dashboard-panel" hidden>
+                    <h2>Timeline</h2>
+                    <div id="timeline-content">
+                        <p>Admission journey timeline coming soon.</p>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Persistent Sidebar -->
+            <aside id="dashboard-sidebar">
+                <nav>
+                    <ul>
+                        <li><a href="/profile" target="_blank">My Intake Form</a></li>
+                        <li><a href="/insurance" target="_blank">Insurance Verification</a></li>
+                        <li><a href="/timeline" target="_blank">Admission Timeline</a></li>
+                        <li><a href="/resources" target="_blank">Support Resources</a></li>
+                    </ul>
+                </nav>
+                <button id="help-icon" type="button" aria-label="Help">
+                    <span class="icon-help"></span>
+                </button>
+                <!-- Help Modal -->
+                <div id="help-modal" class="modal" hidden>
+                    <div class="modal-content">
+                        <span class="close-modal" id="close-help-modal">&times;</span>
+                        <h2>FAQ</h2>
+                        <div id="faq-content">
+                            {% if faq_list %}
+                                <ul>
+                                    {% for faq in faq_list %}
+                                        <li><strong>{{ faq.question }}</strong><br>{{ faq.answer }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p>No FAQ available.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Floating Action Button -->
+            <button id="fab-add">+ Add new info</button>
+
+            <!-- Notification Tray -->
+            <div id="notification-tray" hidden></div>
+        </div>
+    </div>
+</body>
+</html> 
