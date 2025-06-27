@@ -1,0 +1,39 @@
+// schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Facility {
+  id          String    @id @default(cuid())
+  facilityId  String    @unique // SAMHSA facility ID
+  name        String
+  address     String
+  city        String
+  state       String
+  zip         String
+  phone       String?
+  email       String?
+  website     String?
+  latitude    Float?
+  longitude   Float?
+  services    Json?     // JSON array of services
+  messages    Message[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  facilityId String
+  facility   Facility @relation(fields: [facilityId], references: [id])
+  direction  String   // "incoming" or "outgoing"
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  min-height: 100vh;
+}
+
+/* Custom styles */
+.text-green-700 {
+  color: #15803d;
+}
+
+.bg-green-50 {
+  background-color: #f0fdf4;
+}
+
+.bg-red-50 {
+  background-color: #fef2f2;
+}
+
+.border-red-200 {
+  border-color: #fecaca;
+}
+
+.text-red-700 {
+  color: #b91c1c;
+} 
