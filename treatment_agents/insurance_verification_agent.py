@@ -152,7 +152,7 @@ def get_insurance_verification_tools_func(arcade_client):
         
         try:
             # Get Google tools for creating verification documents
-            google_tools = await get_arcade_tools(arcade_client, ["google"])
+            google_tools = await get_arcade_tools(arcade_client, toolkits=["google"])
             tools.extend(google_tools)
         except Exception as e:
             logger.warning(f"Could not add Google tools: {e}")
@@ -201,11 +201,32 @@ async def create_insurance_verification_agent(arcade_client=None, get_tools_func
        - Project treatment program expenses
        - Identify potential financial assistance
 
-    💡 AVAILABLE TOOLS:
-    - verify_insurance_coverage: Check coverage details and benefits
-    - Google Docs: Create verification summaries and tracking documents
-    - Google Sheets: Build cost comparison spreadsheets
-    - Gmail: Send verification summaries to user
+    💡 SPECIFIC ARCADE TOOLS TO USE:
+    - verify_insurance_coverage: Check coverage details and benefits (custom tool)
+    - `Google.CreateBlankDocument`: Create verification summaries and tracking documents
+    - `Google.CreateSpreadsheet`: Build cost comparison spreadsheets with facility costs
+    - `Google.SendEmail`: Send verification summaries to user
+    - `Web.ScrapeUrl`: Extract insurance network information from provider websites
+    - `Google.CreateContact`: Add insurance and facility contacts
+
+    🔍 VISION-POWERED INSURANCE ANALYSIS:
+    Your system includes advanced insurance card image analysis capabilities:
+    - **API Endpoint**: `/api/vision/analyze_insurance_card`
+    - **Extracts**: Provider name, member ID, group number, plan type, copays, deductibles
+    - **Usage**: When users mention having their insurance card, guide them to upload it
+    - **Benefits**: Automatically populate insurance information for verification
+
+    **When to Recommend Image Upload:**
+    - User says "I have my insurance card" 
+    - User is unsure about their plan details
+    - User wants to verify coverage information
+    - User needs help reading their insurance card
+
+    **How to Guide Users:**
+    1. "I can analyze your insurance card image to extract all the details automatically"
+    2. "Please visit the vision analysis section or upload your insurance card image"
+    3. "This will help me verify your exact coverage and plan information"
+    4. "Take a clear photo of both front and back of your insurance card"
 
     📊 OUTPUT REQUIREMENTS:
     Always provide comprehensive coverage information including:
@@ -319,6 +340,6 @@ async def create_insurance_verification_agent(arcade_client=None, get_tools_func
         name="InsuranceVerificationAgent",
         instructions=instructions,
         tools=tools,
-        model="gpt-4.1",
+        model="gpt-4o",
         model_settings=ModelSettings(temperature=0.2)  # Low temperature for accurate information
     ) 

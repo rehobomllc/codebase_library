@@ -67,9 +67,8 @@ async def run_agent_with_auth_handling(
     initial_attempt: bool = True # Internal flag to differentiate initial call from retries
 ) -> T_AgentResult:
     """
-    Runs an agent operation, handling Arcade authorization errors by guiding through
-    the authorization flow and retrying. This function implements the "complete flow"
-    including waiting for authorization.
+    Runs an agent operation, handling Arcade authorization errors by immediately
+    returning authorization URLs without blocking, following Arcade best practices.
 
     Args:
         runner_callable: The async function to call to run the agent (e.g., Runner.run or Runner.run_streamed).
@@ -79,15 +78,14 @@ async def run_agent_with_auth_handling(
         arcade_client: The AsyncArcade client instance.
         run_config_kwargs: Optional additional keyword arguments for the runner_callable (e.g., max_turns for Runner.run).
         max_operation_retries: Number of times to retry the operation after a successful auth.
-        auth_timeout_seconds: Timeout for waiting for user authorization.
+        auth_timeout_seconds: NOT USED - included for API compatibility.
         initial_attempt: Tracks if this is the first attempt to run the operation.
 
     Returns:
         The result of the agent operation if successful.
 
     Raises:
-        AuthHelperError: If authorization is required but fails/times out, or retries exhausted.
-                         The `requires_user_action` flag will be True if the user needs to visit an auth_url.
+        AuthHelperError: If authorization is required with URL for user to visit.
         Exception: Any other exception from the agent operation if not an ArcadeAuthorizationError.
     """
     if run_config_kwargs is None:
@@ -144,80 +142,17 @@ async def run_agent_with_auth_handling(
             f"Tool: '{tool_name}', Toolkit: '{toolkit_name}'. Auth URL: {auth_url}, Auth ID for wait: {auth_id_for_wait}"
         )
 
-        if not auth_id_for_wait:
-            logger.error(f"Could not extract a valid auth_id from AuthorizationError for user {user_id} to wait for completion. Error details: {e}")
-            raise AuthHelperError(
-                message=f"Tool authorization is required for '{tool_name}' but failed to get specific authorization details to wait for.",
-                auth_url=auth_url,
-                requires_user_action=True # User still needs to visit the URL
-            )
-
-        if not initial_attempt: # If this error occurs even after an auth attempt
-            logger.error(f"AuthorizationError for user {user_id} persisted after an authorization attempt for auth_id {auth_id_for_wait}.")
-            raise AuthHelperError(
-                message=f"Operation failed for tool '{tool_name}' due to persistent authorization issues even after an auth attempt. Please try authorizing again.",
-                auth_url=auth_url,
-                auth_id_for_wait=auth_id_for_wait,
-                requires_user_action=True
-            )
-
-        # This is the first time AuthorizationError is caught for this operation call.
-        # The FastAPI endpoint should inform the user to visit auth_url and that the request is waiting.
-        # This helper will now block and wait.
+        # Following Arcade best practices: immediately return authorization URL
+        # Don't block the request - let the user authorize and retry
         logger.info(f"User {user_id} needs to authorize toolkit '{toolkit_name}'. URL: {auth_url}. "
-                    f"Holding request and waiting for completion of auth_id: {auth_id_for_wait} (timeout: {auth_timeout_seconds}s).")
+                   f"Returning authorization URL immediately without blocking.")
         
-        # The calling FastAPI endpoint should communicate to the frontend that it's waiting.
-        # For example, by logging this or the frontend showing a "Please authorize in new tab..." message.
-        
-        auth_successful = await handle_auth_flow_explicitly(
-            arcade_client,
-            auth_id_for_wait,
-            auth_timeout_seconds
+        raise AuthHelperError(
+            message=f"Please authorize access to {toolkit_name} tools and try again.",
+            auth_url=auth_url,
+            auth_id_for_wait=auth_id_for_wait,
+            requires_user_action=True
         )
-
-        if auth_successful:
-            logger.info(f"Authorization flow completed successfully for user {user_id}, auth_id {auth_id_for_wait}. Retrying agent operation.")
-            # Retry the operation after successful authorization. Loop for max_operation_retries.
-            for attempt in range(max_operation_retries):
-                try:
-                    logger.info(f"Retry attempt {attempt + 1}/{max_operation_retries} for user {user_id} after auth success.")
-                    # Call recursively, but mark as not initial_attempt
-                    return await run_agent_with_auth_handling(
-                        runner_callable=runner_callable,
-                        starting_agent=starting_agent,
-                        input_data=input_data,
-                        user_id=user_id,
-                        arcade_client=arcade_client,
-                        run_config_kwargs=run_config_kwargs, # Pass original kwargs
-                        max_operation_retries=0, # No more nested auth retries from this path
-                        auth_timeout_seconds=auth_timeout_seconds,
-                        initial_attempt=False # Indicate this is a retry post-auth
-                    )
-                except ArcadeAuthorizationError as retry_auth_e: # Should be rare if auth persistence works
-                    logger.error(f"ArcadeAuthorizationError on retry attempt {attempt + 1} for user {user_id} after auth flow. Error: {retry_auth_e}", exc_info=True)
-                    if attempt == max_operation_retries - 1:
-                        raise AuthHelperError(
-                            message=f"Operation failed for tool '{getattr(retry_auth_e, 'tool_name', 'Unknown')}' due to authorization issues even after completing the auth flow.",
-                            auth_url=str(retry_auth_e),
-                            requires_user_action=True
-                        )
-                    await asyncio.sleep(1) # Small delay before next retry
-                except Exception as op_e_retry:
-                    logger.error(f"Operation failed for user {user_id} on retry attempt {attempt + 1} after auth: {op_e_retry}", exc_info=True)
-                    raise op_e_retry # Re-raise other operation errors
-            
-            # If loop finishes, all retries failed
-            raise AuthHelperError(f"Operation failed after {max_operation_retries} retries, even after successful initial authorization.")
-        else:
-            # Auth flow was not successful (timeout or other failure from handle_auth_flow_explicitly)
-            logger.error(f"Authorization flow for auth_id {auth_id_for_wait} failed or timed out for user {user_id}.")
-            raise AuthHelperError(
-                message="Authorization process was not completed successfully or timed out. Please try the operation again.",
-                auth_url=auth_url, # Provide original auth_url for user to try again
-                auth_id_for_wait=auth_id_for_wait,
-                requires_user_action=True # User might need to try authorizing again via the URL
-            )
     except Exception as ex: # Catch any other non-ArcadeAuthorizationError exceptions
         logger.error(f"An unexpected error occurred during agent operation for user {user_id} (Agent: {starting_agent.name}): {ex}", exc_info=True)
         raise ex

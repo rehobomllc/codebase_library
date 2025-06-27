@@ -13,7 +13,7 @@ async def create_treatment_reminder_agent(
     Creates an Autonomous Treatment Reminder and Schedule Management Agent.
 
     This agent is designed to:
-    1. Use the OpenAI Agents SDK with the gpt-4.1 model.
+    1. Use the OpenAI Agents SDK with the gpt-4o model.
     2. Integrate with Google Calendar and Gmail via Arcade tools for comprehensive treatment schedule management.
     3. Create and track appointments, medication schedules, and treatment milestones.
     4. Manage various reminder types and send notifications via Google Calendar and Gmail.
@@ -90,7 +90,7 @@ You are an Autonomous Treatment Reminder and Schedule Management Specialist. You
 
 **Phase 3: Executing Reminders via Google Tools**
 
-1.  **Google Calendar Events (`Google.CreateCalendarEvent`)**:
+1.  **Google Calendar Events (`Google.CreateEvent`)**:
     *   **Treatment Appointments**:
         *   Event Title: "Treatment Appointment - [Provider/Facility]"
         *   Include: appointment type, provider name, location, phone number
@@ -120,11 +120,11 @@ You are an Autonomous Treatment Reminder and Schedule Management Specialist. You
         *   Include: reflection questions, goal progress
         *   Encouragement and celebration of achievements
         *   Resources for challenges or setbacks
-3.  **Crisis Support Integration**:
-    *   Include crisis hotlines in all reminders: 988, facility crisis line
-    *   Emergency contact information readily available
-    *   Safety planning reminders and resources
-    *   Immediate help options if experiencing crisis
+3.  **Additional Google Tools**:
+    *   **`Google.CreateContact`**: Add treatment providers to user's contacts
+    *   **`Google.ListCalendars`**: Manage separate treatment calendars
+    *   **`Google.FindTimeSlotsWhenEveryoneIsFree`**: Schedule group appointments
+    *   **`Google.GetEvent`**: Check existing appointments before scheduling
 
 **Phase 4: Confirmation and Communication**
 
@@ -218,6 +218,6 @@ You are an Autonomous Treatment Reminder and Schedule Management Specialist. You
         name="TreatmentReminderAgent",
         instructions=instructions,
         tools=google_tools,
-        model="gpt-4.1",
+        model="gpt-4o",
         model_settings=ModelSettings(temperature=0.4)  # Balanced for empathy and accuracy
     ) 

@@ -6,6 +6,178 @@
     <title>Treatment Navigator - Find Mental Health & Substance Use Support</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/static/css/treatment.css" rel="stylesheet">
+    <style>
+        /* Insurance Upload Widget Styles */
+        .insurance-upload-widget {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 2px solid #e3f2fd;
+            margin: 20px 0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .upload-header h3 {
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+
+        .upload-area {
+            border: 2px dashed #90caf9;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #1976d2;
+            background: #e3f2fd;
+        }
+
+        .upload-area.dragover {
+            border-color: #1976d2;
+            background: #e3f2fd;
+            transform: scale(1.02);
+        }
+
+        .upload-placeholder i {
+            font-size: 48px;
+            color: #90caf9;
+            margin-bottom: 16px;
+        }
+
+        .upload-tips {
+            margin-top: 16px;
+            padding: 16px;
+            background: #fff3e0;
+            border-radius: 8px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .upload-tips h4 {
+            margin: 0 0 8px 0;
+            color: #f57c00;
+        }
+
+        .upload-tips ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .upload-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .analysis-results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #e8f5e8;
+            border-radius: 8px;
+            border: 1px solid #4caf50;
+        }
+
+        .extracted-info p {
+            margin: 8px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #4caf50;
+        }
+
+        .btn-primary, .btn-secondary, .btn-success, .btn-warning {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #1976d2;
+            color: white;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled), .btn-secondary:hover, .btn-success:hover, .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Upload button styling */
+        .quick-action.upload-action {
+            background: linear-gradient(135deg, #1976d2, #42a5f5);
+            color: white;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-action.upload-action::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .quick-action.upload-action:hover::before {
+            left: 100%;
+        }
+
+        .quick-action.upload-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(25, 118, 210, 0.3);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .insurance-upload-widget {
+                margin: 10px;
+                padding: 16px;
+            }
+            
+            .upload-actions {
+                flex-direction: column;
+            }
+            
+            .btn-primary, .btn-secondary, .btn-success, .btn-warning {
+                width: 100%;
+            }
+        }
+    </style>
     <meta name="description" content="Compassionate support to find mental health and substance use treatment. Available 24/7 with crisis support.">
 </head>
 <body>
@@ -65,6 +237,57 @@
                 </div>
             </section>
 
+            <!-- Insurance Card Upload Widget -->
+            <div class="insurance-upload-widget" id="insuranceUploadWidget" style="display: none;">
+                <div class="upload-header">
+                    <h3><i class="fas fa-id-card"></i> Upload Insurance Card</h3>
+                    <p>I can automatically extract your insurance information from a photo of your card</p>
+                </div>
+                
+                <div class="upload-section">
+                    <div class="upload-area" id="insuranceUploadArea">
+                        <input type="file" id="insuranceCardFile" accept="image/*" style="display: none;">
+                        <div class="upload-placeholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload or drag your insurance card image here</p>
+                            <small>Supports JPG, PNG, GIF, WebP (max 20MB)</small>
+                        </div>
+                    </div>
+                    
+                    <div class="upload-tips">
+                        <h4>For best results:</h4>
+                        <ul>
+                            <li>Take photo in good lighting</li>
+                            <li>Ensure all text is clearly visible</li>
+                            <li>Upload both front and back if needed</li>
+                            <li>Avoid glare or shadows</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="upload-actions">
+                    <button id="analyzeInsuranceCard" class="btn-primary" disabled>
+                        <i class="fas fa-search"></i> Analyze Insurance Card
+                    </button>
+                    <button id="cancelInsuranceUpload" class="btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+                
+                <div id="insuranceAnalysisResults" class="analysis-results" style="display: none;">
+                    <h4>Insurance Information Extracted:</h4>
+                    <div id="extractedInsuranceData"></div>
+                    <div class="results-actions">
+                        <button id="useExtractedData" class="btn-success">
+                            <i class="fas fa-check"></i> Use This Information
+                        </button>
+                        <button id="retryInsuranceUpload" class="btn-warning">
+                            <i class="fas fa-redo"></i> Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Chat Interface -->
             <section class="chat-section">
                 <div class="chat-container">
@@ -102,6 +325,9 @@
                             </button>
                             <button class="quick-action" data-message="I need to verify my insurance coverage">
                                 Check Insurance
+                            </button>
+                            <button class="quick-action upload-action" id="showInsuranceUploadBtn" style="display: none;">
+                                <i class="fas fa-camera"></i> Upload Insurance Card
                             </button>
                         </div>
                     </div>
@@ -172,5 +398,210 @@
     </div>
 
     <script src="/static/js/treatment.js"></script>
+    <script>
+        // Insurance card upload integration
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadWidget = document.getElementById('insuranceUploadWidget');
+            const uploadArea = document.getElementById('insuranceUploadArea');
+            const fileInput = document.getElementById('insuranceCardFile');
+            const analyzeBtn = document.getElementById('analyzeInsuranceCard');
+            const cancelBtn = document.getElementById('cancelInsuranceUpload');
+            const resultsDiv = document.getElementById('insuranceAnalysisResults');
+            const showUploadBtn = document.getElementById('showInsuranceUploadBtn');
+            
+            // Global functions for chat integration
+            window.showInsuranceUpload = function() {
+                uploadWidget.style.display = 'block';
+                uploadWidget.scrollIntoView({ behavior: 'smooth' });
+                
+                // Hide the upload button once widget is shown
+                if (showUploadBtn) {
+                    showUploadBtn.style.display = 'none';
+                }
+            };
+            
+            window.hideInsuranceUpload = function() {
+                uploadWidget.style.display = 'none';
+                // Reset the upload form
+                resetUploadForm();
+            };
+            
+            // Function to show upload button in chat
+            window.showInsuranceUploadOption = function() {
+                if (showUploadBtn) {
+                    showUploadBtn.style.display = 'inline-block';
+                }
+            };
+            
+            // Function to send extracted insurance data back to chat
+            window.sendInsuranceDataToChat = function(data) {
+                const message = `Here's my insurance information from the card: Provider: ${data.provider_name || 'Unknown'}, Member ID: ${data.member_id || 'Unknown'}, Plan Type: ${data.plan_type || 'Unknown'}`;
+                if (window.sendMessageToChat) {
+                    window.sendMessageToChat(message);
+                }
+            };
+            
+            function resetUploadForm() {
+                uploadArea.innerHTML = `
+                    <div class="upload-placeholder">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to upload or drag your insurance card image here</p>
+                        <small>Supports JPG, PNG, GIF, WebP (max 20MB)</small>
+                    </div>
+                `;
+                fileInput.value = '';
+                analyzeBtn.disabled = true;
+                resultsDiv.style.display = 'none';
+            }
+            
+            // Show upload button click handler
+            if (showUploadBtn) {
+                showUploadBtn.addEventListener('click', function() {
+                    window.showInsuranceUpload();
+                });
+            }
+            
+            // File upload handling
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFileSelect();
+                }
+            });
+            
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            function handleFileSelect() {
+                const file = fileInput.files[0];
+                if (file) {
+                    // Validate file type
+                    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                    if (!validTypes.includes(file.type)) {
+                        alert('Please upload a valid image file (JPG, PNG, GIF, or WebP)');
+                        return;
+                    }
+                    
+                    // Validate file size (20MB)
+                    if (file.size > 20 * 1024 * 1024) {
+                        alert('File size must be less than 20MB');
+                        return;
+                    }
+                    
+                    uploadArea.innerHTML = `
+                        <i class="fas fa-image"></i>
+                        <p><strong>${file.name}</strong></p>
+                        <small>Ready to analyze (${(file.size / 1024 / 1024).toFixed(1)} MB)</small>
+                    `;
+                    analyzeBtn.disabled = false;
+                }
+            }
+            
+            // Analyze insurance card
+            analyzeBtn.addEventListener('click', async function() {
+                const file = fileInput.files[0];
+                if (!file) return;
+                
+                const formData = new FormData();
+                formData.append('user_id', window.currentUserId || 'anonymous');
+                formData.append('file', file);
+                
+                analyzeBtn.disabled = true;
+                analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+                
+                try {
+                    const response = await fetch('/api/vision/analyze_insurance_card', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success && result.results) {
+                        displayResults(result.results);
+                        
+                        // Add chat message about successful analysis
+                        if (window.addBotMessage) {
+                            window.addBotMessage("Great! I've successfully analyzed your insurance card. You can review the extracted information below and use it for verification.");
+                        }
+                    } else {
+                        throw new Error(result.error_message || 'Analysis failed');
+                    }
+                } catch (error) {
+                    alert('Failed to analyze insurance card: ' + error.message);
+                    
+                    // Add chat message about failed analysis
+                    if (window.addBotMessage) {
+                        window.addBotMessage("I had trouble analyzing your insurance card. Please make sure the image is clear and try again, or you can enter your insurance information manually.");
+                    }
+                } finally {
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.innerHTML = '<i class="fas fa-search"></i> Analyze Insurance Card';
+                }
+            });
+            
+            function displayResults(data) {
+                const extractedData = document.getElementById('extractedInsuranceData');
+                extractedData.innerHTML = `
+                    <div class="extracted-info">
+                        <p><strong>Provider:</strong> ${data.provider_name || 'Not found'}</p>
+                        <p><strong>Member ID:</strong> ${data.member_id || 'Not found'}</p>
+                        <p><strong>Group Number:</strong> ${data.group_number || 'Not found'}</p>
+                        <p><strong>Plan Type:</strong> ${data.plan_type || 'Not found'}</p>
+                        <p><strong>Effective Date:</strong> ${data.effective_date || 'Not found'}</p>
+                        ${data.copay_primary_care ? `<p><strong>Primary Care Copay:</strong> ${data.copay_primary_care}</p>` : ''}
+                        ${data.copay_specialist ? `<p><strong>Specialist Copay:</strong> ${data.copay_specialist}</p>` : ''}
+                        ${data.deductible ? `<p><strong>Deductible:</strong> ${data.deductible}</p>` : ''}
+                    </div>
+                `;
+                resultsDiv.style.display = 'block';
+                resultsDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            // Cancel button
+            cancelBtn.addEventListener('click', function() {
+                window.hideInsuranceUpload();
+                if (showUploadBtn) {
+                    showUploadBtn.style.display = 'inline-block';
+                }
+            });
+            
+            // Use extracted data
+            document.getElementById('useExtractedData').addEventListener('click', function() {
+                const extractedInfo = document.querySelector('.extracted-info');
+                if (extractedInfo) {
+                    // Extract the data from the display
+                    const dataText = extractedInfo.textContent;
+                    window.sendInsuranceDataToChat({
+                        provider_name: extractValue(dataText, 'Provider:'),
+                        member_id: extractValue(dataText, 'Member ID:'),
+                        group_number: extractValue(dataText, 'Group Number:'),
+                        plan_type: extractValue(dataText, 'Plan Type:'),
+                        effective_date: extractValue(dataText, 'Effective Date:')
+                    });
+                }
+                window.hideInsuranceUpload();
+            });
+            
+            function extractValue(text, label) {
+                const regex = new RegExp(label + '\\s*([^\\n]*?)(?=\\n|$)', 'i');
+                const match = text.match(regex);
+                return match ? match[1].trim() : 'Unknown';
+            }
+        });
+    </script>
 </body>
 </html> 

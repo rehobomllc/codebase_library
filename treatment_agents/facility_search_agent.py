@@ -138,6 +138,13 @@ def get_facility_search_tools_func(arcade_client):
         except Exception as e:
             logger.warning(f"Could not add WebSearchTool: {e}")
 
+        try:
+            # Add Arcade's web tools for deeper facility research
+            arcade_tools = await get_arcade_tools(arcade_client, toolkits=["web"])
+            tools.extend(arcade_tools)
+        except Exception as e:
+            logger.warning(f"Could not add Arcade web tools: {e}")
+
         return tools
     return inner
 

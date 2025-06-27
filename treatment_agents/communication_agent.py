@@ -245,7 +245,7 @@ def get_treatment_communication_tools_func(arcade_client):
         
         try:
             # Get Google tools for email and document management
-            google_tools = await get_arcade_tools(arcade_client, ["google"])
+            google_tools = await get_arcade_tools(arcade_client, toolkits=["google"])
             tools.extend(google_tools)
         except Exception as e:
             logger.warning(f"Could not add Google tools: {e}")
@@ -298,11 +298,14 @@ async def create_treatment_communication_agent(arcade_client=None, get_tools_fun
     - Address concerns or questions
     - Coordinate care between providers
 
-    💡 AVAILABLE TOOLS:
-    - send_treatment_communication: Draft and send professional emails
-    - Gmail: Send emails and manage communications
-    - Google Docs: Create communication templates and track correspondence
-    - Google Drive: Store and organize communication records
+    💡 SPECIFIC ARCADE TOOLS TO USE:
+    - send_treatment_communication: Draft professional emails (custom tool)
+    - `Google.SendEmail`: Send emails directly via Gmail API
+    - `Google.CreateDraftEmail`: Create draft emails for user review
+    - `Google.CreateBlankDocument`: Create communication templates
+    - `Google.CreateContact`: Add facility contacts to user's address book
+    - `Google.ListEmails`: Check for facility responses
+    - `Google.GetThread`: Follow email conversation threads
 
     📋 COMMUNICATION PROCESS:
     1. **Gather Communication Requirements**:
@@ -452,6 +455,6 @@ async def create_treatment_communication_agent(arcade_client=None, get_tools_fun
         name="TreatmentCommunicationAgent",
         instructions=instructions,
         tools=tools,
-        model="gpt-4.1",
+        model="gpt-4o",
         model_settings=ModelSettings(temperature=0.3)  # Lower temperature for professional communication
     ) 

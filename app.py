@@ -18,11 +18,13 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from arcadepy import AsyncArcade
 # OpenAI Agents SDK imports
-from agents import Agent, Runner, RunConfig, ItemHelpers, set_default_openai_key, ModelSettings
+from agents import Agent, Runner, RunConfig, ItemHelpers, set_default_openai_key, set_default_openai_client, ModelSettings
 from agents.result import RunResult, RunResultStreaming
 from agents.handoffs import handoff
-from agents.tracing import trace, gen_trace_id
+from agents.tracing import trace, gen_trace_id, set_tracing_export_api_key, set_tracing_disabled
 from agents.exceptions import InputGuardrailTripwireTriggered, OutputGuardrailTripwireTriggered
+# Import OpenAI client with proper SSL configuration  
+from openai import AsyncOpenAI
 # Arcade integration imports
 from agents_arcade import get_arcade_tools
 from agents_arcade.errors import AuthorizationError as ArcadeAuthorizationError
@@ -63,11 +65,17 @@ from treatment_agents.communication_agent import create_treatment_communication_
 
 from utils.tool_provider import initialize_tool_provider, get_tool_provider, UnifiedToolProvider
 from utils.arcade_auth_helper import run_agent_with_auth_handling, AuthHelperError, check_toolkit_authorization_status
+from utils.agent_optimizer import initialize_agent_optimizer, get_agent_optimizer
 
-# SSL Certificate Fix for macOS
+# SSL Certificate Fix for macOS and Python HTTP clients
 os.environ['SSL_CERT_FILE'] = certifi.where()
 os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
 os.environ['CURL_CA_BUNDLE'] = certifi.where()
+# Fix for HTTPX and OpenAI SDK
+os.environ['SSL_CERT_DIR'] = os.path.dirname(certifi.where())
+# Disable SSL verification warnings for development (remove in production)
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(dotenv_path=BASE_DIR / ".env")
@@ -126,17 +134,58 @@ async def lifespan(app: FastAPI):
         raise RuntimeError("DATABASE_URL not configured")
     
     if config.OPENAI_API_KEY: 
-        set_default_openai_key(config.OPENAI_API_KEY)
-        logger.info("Default OpenAI API key set.")
+        # Create custom OpenAI client with proper SSL configuration
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        ssl_context.check_hostname = True
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
+        
+        # Create HTTP client for OpenAI with proper SSL
+        openai_http_client = httpx.AsyncClient(
+            verify=ssl_context,
+            timeout=60.0,
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
+            headers={"User-Agent": "TreatmentNavigator/1.0"}
+        )
+        
+        # Create custom OpenAI client
+        custom_openai_client = AsyncOpenAI(
+            api_key=config.OPENAI_API_KEY,
+            http_client=openai_http_client
+        )
+        
+        # Set the custom client for both LLM requests and tracing
+        set_default_openai_client(custom_openai_client, use_for_tracing=True)
+        
+        # Additional tracing configuration
+        set_tracing_export_api_key(config.OPENAI_API_KEY)
+        set_tracing_disabled(False)
+        
+        logger.info("OpenAI client configured with SSL and tracing enabled.")
     else: 
-        logger.warning("OPENAI_API_KEY not found.")
+        logger.warning("OPENAI_API_KEY not found. Disabling tracing.")
+        set_tracing_disabled(True)
     
     if config.ARCADE_API_KEY:
         try:
+            # Create SSL context with proper certificate verification
             ssl_context = ssl.create_default_context(cafile=certifi.where())
-            custom_http_client = httpx.AsyncClient(verify=ssl_context, timeout=30.0)
+            ssl_context.check_hostname = True
+            ssl_context.verify_mode = ssl.CERT_REQUIRED
+            
+            # Create HTTP client with proper SSL configuration for Arcade
+            custom_http_client = httpx.AsyncClient(
+                verify=ssl_context, 
+                timeout=30.0,
+                limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
+            )
             arcade_client_global = AsyncArcade(api_key=config.ARCADE_API_KEY, http_client=custom_http_client)
             initialize_tool_provider(arcade_client_global)
+            
+            # Initialize the new agent optimizer if enabled
+            if config.ENABLE_AGENT_OPTIMIZATION:
+                initialize_agent_optimizer(arcade_client_global)
+                logger.info("AgentOptimizer initialized with enhanced toolkit support.")
+            
             logger.info("AsyncArcade client and ToolProvider initialized.")
         except Exception as e: 
             logger.error(f"Arcade client/ToolProvider init failed: {e}", exc_info=True)
@@ -150,6 +199,30 @@ async def lifespan(app: FastAPI):
         logger.critical(f"CRITICAL CONFIG ERRORS: {config_errors}")
     else: 
         logger.info("Configuration validated.")
+    
+    # Initialize workflow orchestrator
+    try:
+        from services.workflow_orchestrator import get_workflow_orchestrator
+        workflow_orchestrator = await get_workflow_orchestrator()
+        logger.info("Workflow orchestrator initialized.")
+    except Exception as e:
+        logger.error(f"Failed to initialize workflow orchestrator: {e}", exc_info=True)
+    
+    # Initialize document manager
+    try:
+        from services.document_manager import initialize_document_manager
+        await initialize_document_manager()
+        logger.info("Document manager initialized.")
+    except Exception as e:
+        logger.error(f"Failed to initialize document manager: {e}", exc_info=True)
+    
+    # Start background task system
+    try:
+        from services.background_tasks import start_background_tasks
+        await start_background_tasks()
+        logger.info("Background task system started.")
+    except Exception as e:
+        logger.error(f"Failed to start background task system: {e}", exc_info=True)
     
     logger.info("Treatment Navigator startup completed.")
     
@@ -178,6 +251,14 @@ async def lifespan(app: FastAPI):
         logger.info("Vision analyzer client closed.")
     except Exception as e:
         logger.error(f"Error closing vision analyzer: {e}", exc_info=True)
+    
+    # Stop background task system
+    try:
+        from services.background_tasks import stop_background_tasks
+        await stop_background_tasks()
+        logger.info("Background task system stopped.")
+    except Exception as e:
+        logger.error(f"Error stopping background task system: {e}", exc_info=True)
     
     logger.info("Treatment Navigator shutdown complete.")
 
@@ -491,6 +572,8 @@ async def chat(chat_request: ChatRequest):
             "message_length": len(user_message)
         }
     ) as workflow_trace:
+        # Log trace URL for debugging
+        logger.info(f"🔍 TRACE STARTED for user {user_id}: https://platform.openai.com/traces/{trace_id_val}")
         # Store trace information for debugging if needed
         if user_id not in user_trace_identifiers: 
             user_trace_identifiers[user_id] = {"group_id": user_id, "session_trace_ids": []}
@@ -536,6 +619,9 @@ async def chat(chat_request: ChatRequest):
                 match = re.search(r"APPOINTMENT_SCHEDULED::([a-zA-Z0-9-]+)", agent_reply_text)
                 if match: 
                     extracted_appointment_id = match.group(1)
+            
+            # Log trace completion
+            logger.info(f"✅ TRACE COMPLETED for user {user_id}: https://platform.openai.com/traces/{trace_id_val}")
             
             return ChatResponse(reply=agent_reply_text, appointment_id=extracted_appointment_id)
             
@@ -1177,6 +1263,300 @@ async def analyze_treatment_form_endpoint(
             results={},
             error_message=f"Analysis failed: {str(e)}"
         )
+
+# Workflow Orchestration Endpoints
+
+@app.post("/api/workflow/create")
+async def create_workflow_endpoint(request: Request):
+    """Create a new workflow"""
+    try:
+        data = await request.json()
+        user_id = data.get("user_id")
+        workflow_type = data.get("workflow_type")
+        
+        if not user_id or not workflow_type:
+            raise HTTPException(status_code=400, detail="user_id and workflow_type are required")
+        
+        from services.workflow_orchestrator import get_workflow_orchestrator
+        orchestrator = await get_workflow_orchestrator()
+        
+        workflow_id = await orchestrator.create_workflow(
+            workflow_type=workflow_type,
+            user_id=user_id,
+            **data.get("parameters", {})
+        )
+        
+        return {"workflow_id": workflow_id, "status": "created"}
+        
+    except Exception as e:
+        logger.error(f"Error creating workflow: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/workflow/{workflow_id}/execute")
+async def execute_workflow_endpoint(workflow_id: str):
+    """Execute a workflow"""
+    try:
+        from services.workflow_orchestrator import get_workflow_orchestrator
+        orchestrator = await get_workflow_orchestrator()
+        
+        result = await orchestrator.execute_workflow(workflow_id)
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error executing workflow {workflow_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/workflow/{workflow_id}/status")
+async def get_workflow_status_endpoint(workflow_id: str):
+    """Get workflow status"""
+    try:
+        from services.workflow_orchestrator import get_workflow_orchestrator
+        orchestrator = await get_workflow_orchestrator()
+        
+        if workflow_id in orchestrator.active_workflows:
+            workflow = orchestrator.active_workflows[workflow_id]
+            return {
+                "workflow_id": workflow_id,
+                "status": workflow.status.value,
+                "current_step": workflow.current_step,
+                "progress": {
+                    "completed_steps": len([s for s in workflow.steps if s.status.value == "completed"]),
+                    "total_steps": len(workflow.steps)
+                }
+            }
+        else:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+            
+    except Exception as e:
+        logger.error(f"Error getting workflow status {workflow_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Background Task Endpoints
+
+@app.post("/api/tasks/schedule")
+async def schedule_task_endpoint(request: Request):
+    """Schedule a background task"""
+    try:
+        data = await request.json()
+        
+        from services.background_tasks import get_background_task_manager, TaskPriority
+        from datetime import datetime
+        
+        task_manager = await get_background_task_manager()
+        
+        # Parse scheduled_for datetime
+        scheduled_for_str = data.get("scheduled_for")
+        if scheduled_for_str:
+            scheduled_for = datetime.fromisoformat(scheduled_for_str)
+        else:
+            scheduled_for = datetime.now()
+        
+        # Parse priority
+        priority_str = data.get("priority", "NORMAL")
+        priority = TaskPriority[priority_str]
+        
+        task_id = await task_manager.schedule_task(
+            user_id=data["user_id"],
+            task_type=data["task_type"],
+            name=data["name"],
+            description=data.get("description", ""),
+            scheduled_for=scheduled_for,
+            priority=priority,
+            parameters=data.get("parameters", {}),
+            is_recurring=data.get("is_recurring", False),
+            recurrence_pattern=data.get("recurrence_pattern")
+        )
+        
+        return {"task_id": task_id, "status": "scheduled"}
+        
+    except Exception as e:
+        logger.error(f"Error scheduling task: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/tasks/{task_id}/cancel")
+async def cancel_task_endpoint(task_id: str):
+    """Cancel a scheduled task"""
+    try:
+        from services.background_tasks import get_background_task_manager
+        task_manager = await get_background_task_manager()
+        
+        success = await task_manager.cancel_task(task_id)
+        if success:
+            return {"task_id": task_id, "status": "cancelled"}
+        else:
+            raise HTTPException(status_code=404, detail="Task not found or cannot be cancelled")
+            
+    except Exception as e:
+        logger.error(f"Error cancelling task {task_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/tasks/{user_id}")
+async def get_user_tasks_endpoint(user_id: str):
+    """Get tasks for a user"""
+    try:
+        from services.background_tasks import get_background_task_manager
+        task_manager = await get_background_task_manager()
+        
+        user_tasks = []
+        for task in task_manager.active_tasks.values():
+            if task.user_id == user_id:
+                user_tasks.append({
+                    "task_id": task.task_id,
+                    "name": task.name,
+                    "task_type": task.task_type,
+                    "status": task.status.value,
+                    "scheduled_for": task.scheduled_for.isoformat(),
+                    "created_at": task.created_at.isoformat(),
+                    "is_recurring": task.is_recurring
+                })
+        
+        return {"tasks": user_tasks}
+        
+    except Exception as e:
+        logger.error(f"Error getting tasks for user {user_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Document Management Endpoints
+
+@app.post("/api/documents/create")
+async def create_document_endpoint(request: Request):
+    """Create a new document from template or blank"""
+    try:
+        data = await request.json()
+        
+        from services.document_manager import get_document_manager, DocumentType
+        doc_manager = await get_document_manager()
+        
+        if data.get("template_id"):
+            # Create from template
+            document_id = await doc_manager.create_document_from_template(
+                user_id=data["user_id"],
+                template_id=data["template_id"],
+                title=data["title"],
+                variables=data.get("variables", {}),
+                description=data.get("description", ""),
+                tags=data.get("tags", [])
+            )
+        else:
+            # Create blank document
+            document_type = DocumentType(data["document_type"])
+            document_id = await doc_manager.create_blank_document(
+                user_id=data["user_id"],
+                document_type=document_type,
+                title=data["title"],
+                description=data.get("description", ""),
+                content=data.get("content", ""),
+                tags=data.get("tags", [])
+            )
+        
+        return {"document_id": document_id, "status": "created"}
+        
+    except Exception as e:
+        logger.error(f"Error creating document: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/documents/{user_id}")
+async def get_user_documents_endpoint(user_id: str, document_type: Optional[str] = None, status: Optional[str] = None):
+    """Get documents for a user"""
+    try:
+        from services.document_manager import get_document_manager, DocumentType, DocumentStatus
+        doc_manager = await get_document_manager()
+        
+        # Parse filters
+        doc_type_filter = DocumentType(document_type) if document_type else None
+        status_filter = DocumentStatus(status) if status else None
+        
+        documents = await doc_manager.get_user_documents(
+            user_id=user_id,
+            document_type=doc_type_filter,
+            status=status_filter
+        )
+        
+        doc_list = []
+        for doc in documents:
+            doc_list.append({
+                "document_id": doc.document_id,
+                "title": doc.title,
+                "document_type": doc.document_type.value,
+                "status": doc.status.value,
+                "created_at": doc.created_at.isoformat(),
+                "updated_at": doc.updated_at.isoformat(),
+                "tags": doc.tags,
+                "google_doc_id": doc.google_doc_id,
+                "google_sheet_id": doc.google_sheet_id
+            })
+        
+        return {"documents": doc_list}
+        
+    except Exception as e:
+        logger.error(f"Error getting documents for user {user_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/documents/templates")
+async def get_document_templates_endpoint():
+    """Get all available document templates"""
+    try:
+        from services.document_manager import get_document_manager
+        doc_manager = await get_document_manager()
+        
+        templates = await doc_manager.get_templates()
+        
+        template_list = []
+        for template in templates:
+            template_list.append({
+                "template_id": template.template_id,
+                "name": template.name,
+                "document_type": template.document_type.value,
+                "variables": template.variables,
+                "usage_count": template.usage_count,
+                "created_at": template.created_at.isoformat()
+            })
+        
+        return {"templates": template_list}
+        
+    except Exception as e:
+        logger.error(f"Error getting document templates: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/documents/{document_id}/update")
+async def update_document_endpoint(document_id: str, request: Request):
+    """Update a document"""
+    try:
+        data = await request.json()
+        
+        from services.document_manager import get_document_manager
+        doc_manager = await get_document_manager()
+        
+        version_id = await doc_manager.update_document(
+            document_id=document_id,
+            updated_by=data["updated_by"],
+            changes_summary=data["changes_summary"],
+            new_content=data.get("new_content"),
+            metadata_updates=data.get("metadata_updates", {})
+        )
+        
+        return {"document_id": document_id, "version_id": version_id, "status": "updated"}
+        
+    except Exception as e:
+        logger.error(f"Error updating document {document_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/documents/{document_id}")
+async def delete_document_endpoint(document_id: str, permanent: bool = False):
+    """Delete a document"""
+    try:
+        from services.document_manager import get_document_manager
+        doc_manager = await get_document_manager()
+        
+        success = await doc_manager.delete_document(document_id, permanent=permanent)
+        if success:
+            return {"document_id": document_id, "status": "deleted", "permanent": permanent}
+        else:
+            raise HTTPException(status_code=404, detail="Document not found")
+            
+    except Exception as e:
+        logger.error(f"Error deleting document {document_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

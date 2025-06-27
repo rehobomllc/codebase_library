@@ -213,7 +213,7 @@ def get_intake_form_tools_func(arcade_client):
         
         try:
             # Get Google tools for document creation and management
-            google_tools = await get_arcade_tools(arcade_client, ["google"])
+            google_tools = await get_arcade_tools(arcade_client, toolkits=["google"])
             tools.extend(google_tools)
         except Exception as e:
             logger.warning(f"Could not add Google tools: {e}")
@@ -263,11 +263,13 @@ async def create_intake_form_agent(arcade_client=None, get_tools_func=None):
        - Offer strategies for difficult or emotional sections
        - Ensure thoroughness and accuracy
 
-    💡 AVAILABLE TOOLS:
-    - fill_intake_form: Assist with form completion and organization
-    - Google Docs: Create organized intake form templates and completed forms
-    - Google Drive: Securely store and organize intake documents
-    - Gmail: Send completed forms to facilities securely
+    💡 SPECIFIC ARCADE TOOLS TO USE:
+    - fill_intake_form: Assist with form completion and organization (custom tool)
+    - `Google.CreateBlankDocument`: Create organized intake form templates
+    - `Google.CreateDocumentFromText`: Generate completed forms from user input
+    - `Google.SendEmail`: Send completed forms to facilities securely
+    - `Google.CreateContact`: Add facility intake coordinators to contacts
+    - `Google.ListDocuments`: Organize and manage multiple intake forms
 
     📝 INTAKE FORM SECTIONS TO MANAGE:
     **Basic Information:**
@@ -420,6 +422,6 @@ async def create_intake_form_agent(arcade_client=None, get_tools_func=None):
         name="TreatmentIntakeFormAssistant",
         instructions=instructions,
         tools=tools,
-        model="gpt-4.1",
+        model="gpt-4o",
         model_settings=ModelSettings(temperature=0.4)  # Balanced for accuracy and empathy
     ) 

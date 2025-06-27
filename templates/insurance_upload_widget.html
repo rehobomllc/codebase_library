@@ -1,0 +1,276 @@
+<!-- Insurance Card Upload Widget -->
+<div class="insurance-upload-widget" id="insuranceUploadWidget" style="display: none;">
+    <div class="upload-header">
+        <h3><i class="fas fa-id-card"></i> Upload Insurance Card</h3>
+        <p>I can automatically extract your insurance information from a photo of your card</p>
+    </div>
+    
+    <div class="upload-section">
+        <div class="upload-area" id="insuranceUploadArea">
+            <input type="file" id="insuranceCardFile" accept="image/*" style="display: none;">
+            <div class="upload-placeholder">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Click to upload or drag your insurance card image here</p>
+                <small>Supports JPG, PNG, GIF, WebP (max 20MB)</small>
+            </div>
+        </div>
+        
+        <div class="upload-tips">
+            <h4>For best results:</h4>
+            <ul>
+                <li>Take photo in good lighting</li>
+                <li>Ensure all text is clearly visible</li>
+                <li>Upload both front and back if needed</li>
+                <li>Avoid glare or shadows</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="upload-actions">
+        <button id="analyzeInsuranceCard" class="btn-primary" disabled>
+            <i class="fas fa-search"></i> Analyze Insurance Card
+        </button>
+        <button id="cancelInsuranceUpload" class="btn-secondary">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+    </div>
+    
+    <div id="insuranceAnalysisResults" class="analysis-results" style="display: none;">
+        <h4>Insurance Information Extracted:</h4>
+        <div id="extractedInsuranceData"></div>
+        <div class="results-actions">
+            <button id="useExtractedData" class="btn-success">
+                <i class="fas fa-check"></i> Use This Information
+            </button>
+            <button id="retryInsuranceUpload" class="btn-warning">
+                <i class="fas fa-redo"></i> Try Again
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.insurance-upload-widget {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border: 2px solid #e3f2fd;
+    margin: 20px 0;
+}
+
+.upload-header h3 {
+    color: #1976d2;
+    margin-bottom: 8px;
+}
+
+.upload-area {
+    border: 2px dashed #90caf9;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+    border-color: #1976d2;
+    background: #e3f2fd;
+}
+
+.upload-area.dragover {
+    border-color: #1976d2;
+    background: #e3f2fd;
+    transform: scale(1.02);
+}
+
+.upload-placeholder i {
+    font-size: 48px;
+    color: #90caf9;
+    margin-bottom: 16px;
+}
+
+.upload-tips {
+    margin-top: 16px;
+    padding: 16px;
+    background: #fff3e0;
+    border-radius: 8px;
+    border-left: 4px solid #ff9800;
+}
+
+.upload-tips h4 {
+    margin: 0 0 8px 0;
+    color: #f57c00;
+}
+
+.upload-tips ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.upload-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.analysis-results {
+    margin-top: 20px;
+    padding: 20px;
+    background: #e8f5e8;
+    border-radius: 8px;
+    border: 1px solid #4caf50;
+}
+
+.btn-primary, .btn-secondary, .btn-success, .btn-warning {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: #1976d2;
+    color: white;
+}
+
+.btn-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-success {
+    background: #4caf50;
+    color: white;
+}
+
+.btn-warning {
+    background: #ff9800;
+    color: white;
+}
+</style>
+
+<script>
+// Insurance card upload functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadWidget = document.getElementById('insuranceUploadWidget');
+    const uploadArea = document.getElementById('insuranceUploadArea');
+    const fileInput = document.getElementById('insuranceCardFile');
+    const analyzeBtn = document.getElementById('analyzeInsuranceCard');
+    const cancelBtn = document.getElementById('cancelInsuranceUpload');
+    const resultsDiv = document.getElementById('insuranceAnalysisResults');
+    
+    // Show widget when insurance verification is needed
+    window.showInsuranceUpload = function() {
+        uploadWidget.style.display = 'block';
+        uploadWidget.scrollIntoView({ behavior: 'smooth' });
+    };
+    
+    // Hide widget
+    function hideWidget() {
+        uploadWidget.style.display = 'none';
+    }
+    
+    // File upload handling
+    uploadArea.addEventListener('click', () => fileInput.click());
+    
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect();
+        }
+    });
+    
+    fileInput.addEventListener('change', handleFileSelect);
+    
+    function handleFileSelect() {
+        const file = fileInput.files[0];
+        if (file) {
+            uploadArea.innerHTML = `
+                <i class="fas fa-image"></i>
+                <p><strong>${file.name}</strong></p>
+                <small>Ready to analyze</small>
+            `;
+            analyzeBtn.disabled = false;
+        }
+    }
+    
+    // Analyze insurance card
+    analyzeBtn.addEventListener('click', async function() {
+        const file = fileInput.files[0];
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('user_id', window.currentUserId || 'anonymous');
+        formData.append('file', file);
+        
+        analyzeBtn.disabled = true;
+        analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+        
+        try {
+            const response = await fetch('/api/vision/analyze_insurance_card', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                displayResults(result.results);
+            } else {
+                throw new Error(result.error_message || 'Analysis failed');
+            }
+        } catch (error) {
+            alert('Failed to analyze insurance card: ' + error.message);
+        } finally {
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerHTML = '<i class="fas fa-search"></i> Analyze Insurance Card';
+        }
+    });
+    
+    function displayResults(data) {
+        const extractedData = document.getElementById('extractedInsuranceData');
+        extractedData.innerHTML = `
+            <div class="extracted-info">
+                <p><strong>Provider:</strong> ${data.provider_name || 'Not found'}</p>
+                <p><strong>Member ID:</strong> ${data.member_id || 'Not found'}</p>
+                <p><strong>Group Number:</strong> ${data.group_number || 'Not found'}</p>
+                <p><strong>Plan Type:</strong> ${data.plan_type || 'Not found'}</p>
+                <p><strong>Effective Date:</strong> ${data.effective_date || 'Not found'}</p>
+            </div>
+        `;
+        resultsDiv.style.display = 'block';
+    }
+    
+    // Cancel button
+    cancelBtn.addEventListener('click', hideWidget);
+    
+    // Use extracted data
+    document.getElementById('useExtractedData').addEventListener('click', function() {
+        // Send extracted data back to chat
+        const data = JSON.parse(document.getElementById('extractedInsuranceData').textContent);
+        window.sendInsuranceDataToChat(data);
+        hideWidget();
+    });
+});
+</script> 

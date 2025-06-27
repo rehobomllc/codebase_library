@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Unified Tool Provider
-Standardizes tool loading across all agents with a consistent interface,
-integrating both OpenAI native tools and Arcade tools.
+Enhanced Unified Tool Provider
+Optimizes tool loading across all agents with expanded toolkit support,
+integrating both OpenAI native tools and comprehensive Arcade tools.
 """
 
 import logging
@@ -16,90 +16,117 @@ from agents_arcade.errors import AuthorizationError, ToolError # Specific errors
 
 logger = logging.getLogger(__name__)
 
-class UnifiedToolProvider:
+class EnhancedToolProvider:
     """
-    Standardized tool provider that handles both Arcade and OpenAI tools
-    with a consistent interface across all agents.
+    Enhanced tool provider with expanded toolkit support and optimized loading
+    for treatment-focused applications.
     """
 
     def __init__(self, arcade_client: Optional[AsyncArcade] = None):
         self.arcade_client: Optional[AsyncArcade] = arcade_client
         self._tool_cache: Dict[str, List[OpenAIAgentTool]] = {}
-        logger.info(f"UnifiedToolProvider initialized. Arcade client {'present' if arcade_client else 'not present'}.")
+        
+        # Define toolkit groups for different agent types
+        self._toolkit_mapping = {
+            "web": ["web"],
+            "google": ["google"],
+            "communication": ["google", "slack"],  # Email, calendar, team communication
+            "healthcare": ["google", "web"],       # Healthcare-specific tools
+            "documentation": ["google", "notion"], # Document management
+            "social_media": ["linkedin", "x"],     # Professional networking
+            "development": ["github"],             # For technical integrations
+            "financial": ["stripe"],              # Payment processing
+            "productivity": ["google", "notion", "slack"],
+            "research": ["web", "google", "arxiv"], # Research and literature
+            "monitoring": ["web", "google"],       # Site monitoring
+        }
+        
+        logger.info(f"EnhancedToolProvider initialized. Arcade client {'present' if arcade_client else 'not present'}.")
 
     async def get_tools(self, requested_toolkits: List[str]) -> List[OpenAIAgentTool]:
         """
-        Unified tool getter that loads tools based on requested toolkit names.
-
+        Enhanced tool loading with caching and expanded toolkit support.
+        
         Args:
-            requested_toolkits: List of toolkit names (e.g., ["web", "google"]).
-                                "google" toolkit provides Drive, Docs, Calendar, and Gmail tools via Arcade.
-
+            requested_toolkits: List of toolkit names or toolkit groups
+            
         Returns:
-            List of configured tool objects compatible with OpenAI Agents SDK.
+            List of loaded tools
         """
-        if not requested_toolkits:
-            logger.debug("No toolkits requested, returning empty list.")
-            return []
+        cache_key = ",".join(sorted(requested_toolkits))
+        
+        if cache_key in self._tool_cache:
+            logger.debug(f"Returning cached tools for toolkits: {requested_toolkits}")
+            return self._tool_cache[cache_key]
 
         loaded_tools: List[OpenAIAgentTool] = []
-        # Use a set to avoid loading the same toolkit multiple times if duplicated in input
-        unique_toolkits = sorted(list(set(requested_toolkits)))
-
-        for toolkit_name in unique_toolkits:
-            cache_key = f"toolkit_{toolkit_name}"
-
-            if cache_key in self._tool_cache:
-                logger.debug(f"Using cached tools for toolkit: '{toolkit_name}'")
-                loaded_tools.extend(self._tool_cache[cache_key])
-                continue
-
-            try:
-                logger.info(f"Loading tools for toolkit: '{toolkit_name}'...")
-                toolkit_specific_tools = await self._load_toolkit_by_name(toolkit_name)
-                self._tool_cache[cache_key] = toolkit_specific_tools
-                loaded_tools.extend(toolkit_specific_tools)
-                logger.info(f"Successfully loaded {len(toolkit_specific_tools)} tools for toolkit: '{toolkit_name}'. Cache updated.")
-            except Exception as e:
-                logger.error(f"Failed to load toolkit '{toolkit_name}': {e}", exc_info=True)
-                # Continue with other toolkits rather than failing entirely
-                continue
         
-        tool_names_loaded = [tool.name if hasattr(tool, 'name') else str(type(tool)) for tool in loaded_tools]
+        # Expand toolkit groups to individual toolkits
+        expanded_toolkits = self._expand_toolkit_groups(requested_toolkits)
+        
+        for toolkit_name in expanded_toolkits:
+            try:
+                toolkit_tools = await self._load_toolkit_by_name(toolkit_name)
+                loaded_tools.extend(toolkit_tools)
+                logger.debug(f"Loaded {len(toolkit_tools)} tools from '{toolkit_name}' toolkit")
+            except Exception as e:
+                logger.warning(f"Failed to load toolkit '{toolkit_name}': {e}", exc_info=True)
+                continue
+
+        # Cache the results
+        self._tool_cache[cache_key] = loaded_tools
+        
+        tool_names_loaded = [getattr(tool, 'name', str(tool)) for tool in loaded_tools]
         logger.info(f"Total tools provided: {len(loaded_tools)} for requested toolkits: {requested_toolkits}. Tool names: {tool_names_loaded}")
+        
         return loaded_tools
 
+    def _expand_toolkit_groups(self, requested_toolkits: List[str]) -> List[str]:
+        """Expand toolkit groups to individual toolkit names."""
+        expanded = set()
+        
+        for toolkit in requested_toolkits:
+            if toolkit in self._toolkit_mapping:
+                expanded.update(self._toolkit_mapping[toolkit])
+            else:
+                expanded.add(toolkit)
+        
+        return list(expanded)
+
     async def _load_toolkit_by_name(self, toolkit_name: str) -> List[OpenAIAgentTool]:
-        """Helper method to load tools for a specific toolkit by its name."""
-        if toolkit_name == "web":
-            return await self._load_web_tools()
-        elif toolkit_name == "google":
-            # The "google" toolkit from Arcade includes Drive, Docs, Calendar, and Gmail.
-            return await self._load_google_suite_tools()
-        # Add other specific toolkit loading logic here if needed in the future
-        # e.g., elif toolkit_name == "github":
-        #           return await self._fetch_arcade_tools_safely(["github"])
+        """Enhanced toolkit loading with support for more toolkits."""
+        toolkit_loaders = {
+            "web": self._load_web_tools,
+            "google": self._load_google_suite_tools,
+            "slack": lambda: self._fetch_arcade_tools_safely(["slack"]),
+            "linkedin": lambda: self._fetch_arcade_tools_safely(["linkedin"]),
+            "x": lambda: self._fetch_arcade_tools_safely(["x"]),
+            "github": lambda: self._fetch_arcade_tools_safely(["github"]),
+            "notion": lambda: self._fetch_arcade_tools_safely(["notion"]),
+            "stripe": lambda: self._fetch_arcade_tools_safely(["stripe"]),
+            "arxiv": lambda: self._fetch_arcade_tools_safely(["arxiv"]),
+        }
+        
+        loader = toolkit_loaders.get(toolkit_name)
+        if loader:
+            return await loader()
         else:
-            logger.warning(f"Unknown or unsupported toolkit requested: '{toolkit_name}'. Attempting to load via Arcade.")
-            # Default to trying to load it as an Arcade toolkit
+            logger.warning(f"Unknown toolkit '{toolkit_name}'. Attempting to load via Arcade.")
             return await self._fetch_arcade_tools_safely([toolkit_name])
 
-
     async def _load_web_tools(self) -> List[OpenAIAgentTool]:
-        """Load web scraping and search tools."""
+        """Load enhanced web scraping and search tools."""
         tools: List[OpenAIAgentTool] = []
 
         # 1. Add OpenAI's native WebSearchTool
         try:
-            # Configure with high context for potentially better, more comprehensive search snippets.
             openai_web_search = WebSearchTool(search_context_size="high")
             tools.append(openai_web_search)
             logger.debug("Loaded OpenAI WebSearchTool with high context size.")
         except Exception as e:
             logger.warning(f"Could not load OpenAI WebSearchTool: {e}", exc_info=True)
 
-        # 2. Add Arcade's "web" toolkit (e.g., for advanced scraping via Firecrawl)
-        # These are conditional on the Arcade client being available.
+        # 2. Add Arcade's comprehensive web toolkit (includes Firecrawl, advanced scraping)
         arcade_web_tools = await self._fetch_arcade_tools_safely(["web"])
         if arcade_web_tools:
             tools.extend(arcade_web_tools)
@@ -108,26 +135,21 @@ class UnifiedToolProvider:
         return tools
 
     async def _load_google_suite_tools(self) -> List[OpenAIAgentTool]:
-        """
-        Load Google Suite tools (Drive, Docs, Calendar, Gmail) via Arcade's "google" toolkit.
-        """
-        # These tools require an Arcade client.
+        """Load Google Suite tools with enhanced capabilities."""
         google_tools = await self._fetch_arcade_tools_safely(["google"])
         if google_tools:
-            logger.debug(f"Loaded {len(google_tools)} tools from Arcade 'google' toolkit (covers Drive, Docs, Calendar, Gmail).")
+            logger.debug(f"Loaded {len(google_tools)} tools from Arcade 'google' toolkit.")
         return google_tools
 
     async def _fetch_arcade_tools_safely(self, arcade_toolkit_names: List[str]) -> List[OpenAIAgentTool]:
         """
-        Safely fetches tools from the Arcade client for the given toolkit names.
-        Handles cases where the client might not be available or tool fetching fails.
+        Safely fetches tools from Arcade with enhanced error handling.
         """
         if not self.arcade_client:
             logger.warning(f"Arcade client not available. Cannot load Arcade toolkits: {arcade_toolkit_names}.")
             return []
 
         try:
-            # `get_arcade_tools` is designed to return tools compatible with openai-agents SDK
             fetched_tools: List[OpenAIAgentTool] = await get_arcade_tools(
                 self.arcade_client,
                 toolkits=arcade_toolkit_names
@@ -135,53 +157,58 @@ class UnifiedToolProvider:
             logger.info(f"Successfully fetched {len(fetched_tools)} tools for Arcade toolkits: {arcade_toolkit_names}.")
             return fetched_tools
         except AuthorizationError as auth_err:
-            logger.error(f"Authorization error while fetching Arcade toolkits {arcade_toolkit_names}: {auth_err}. User may need to authenticate via URL: {auth_err.auth_url}", exc_info=True)
-            # Depending on app flow, this might need to be re-raised or communicated to the user.
-            # For now, returning empty list for this toolkit.
+            logger.error(f"Authorization error while fetching Arcade toolkits {arcade_toolkit_names}: {auth_err}")
             return []
         except ToolError as tool_err:
-            logger.error(f"Tool error while fetching Arcade toolkits {arcade_toolkit_names}: {tool_err}", exc_info=True)
+            logger.error(f"Tool error while fetching Arcade toolkits {arcade_toolkit_names}: {tool_err}")
             return []
-        except ImportError as ie: # Should not happen if dependencies are correct
-            logger.critical(f"ImportError related to agents_arcade: {ie}. Check installations.", exc_info=True)
+        except ImportError as ie:
+            logger.critical(f"ImportError related to agents_arcade: {ie}. Check installations.")
             return []
         except Exception as e:
-            logger.error(f"An unexpected error occurred fetching Arcade toolkits {arcade_toolkit_names}: {e}", exc_info=True)
+            logger.error(f"Unexpected error fetching Arcade toolkits {arcade_toolkit_names}: {e}")
             return []
 
     def create_tool_getter(self) -> Callable[[List[str]], Awaitable[List[OpenAIAgentTool]]]:
-        """
-        Creates a standardized asynchronous tool getter function suitable for agent initialization.
+        """Create a tool getter function for agent creation."""
+        async def get_tools_func(requested_toolkits: List[str]) -> List[OpenAIAgentTool]:
+            return await self.get_tools(requested_toolkits)
+        return get_tools_func
 
-        Returns:
-            An async function that takes a list of toolkit names and returns a list of tools.
-        """
-        async def get_tools_for_agent(toolkits: List[str]) -> List[OpenAIAgentTool]:
-            return await self.get_tools(toolkits)
+    async def get_specialized_tools_for_agent_type(self, agent_type: str) -> List[OpenAIAgentTool]:
+        """Get optimized tool sets for specific agent types."""
+        agent_toolkits = {
+            "triage": ["web", "google"],
+            "facility_search": ["web", "google"],
+            "insurance_verification": ["google", "web"],
+            "appointment_scheduler": ["google"],
+            "intake_form": ["google"],
+            "communication": ["google", "slack"],
+            "essay_extractor": ["web"],
+            "treatment_monitor": ["web", "google"],
+            "research": ["web", "google", "arxiv"],
+            "social_outreach": ["linkedin", "x"],
+        }
         
-        logger.debug("Created a new tool getter function for agent initialization.")
-        return get_tools_for_agent
+        toolkits = agent_toolkits.get(agent_type, ["web", "google"])
+        return await self.get_tools(toolkits)
+
+# --- Backward Compatibility ---
+# Keep the old class name as an alias
+UnifiedToolProvider = EnhancedToolProvider
 
 # --- Global Tool Provider Management ---
-_global_tool_provider_instance: Optional[UnifiedToolProvider] = None
+_global_tool_provider_instance: Optional[EnhancedToolProvider] = None
 
-def initialize_tool_provider(arcade_client: Optional[AsyncArcade] = None) -> UnifiedToolProvider:
-    """
-    Initializes or re-initializes the global tool provider instance.
-    This should be called once at application startup.
-    """
+def initialize_tool_provider(arcade_client: Optional[AsyncArcade] = None) -> EnhancedToolProvider:
+    """Initialize the global enhanced tool provider instance."""
     global _global_tool_provider_instance
-    _global_tool_provider_instance = UnifiedToolProvider(arcade_client)
-    logger.info("Global UnifiedToolProvider has been initialized.")
+    _global_tool_provider_instance = EnhancedToolProvider(arcade_client)
+    logger.info("Global EnhancedToolProvider has been initialized.")
     return _global_tool_provider_instance
 
-def get_tool_provider() -> Optional[UnifiedToolProvider]:
-    """
-    Retrieves the globally available instance of the UnifiedToolProvider.
-    Returns None if `initialize_tool_provider` has not been called.
-    """
-    if _global_tool_provider_instance is None:
-        logger.warning("Attempted to get tool provider before initialization.")
+def get_tool_provider() -> Optional[EnhancedToolProvider]:
+    """Get the global tool provider instance."""
     return _global_tool_provider_instance
 
 async def get_unified_tools_for_agent_creation(toolkits: List[str]) -> List[OpenAIAgentTool]:

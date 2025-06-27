@@ -134,7 +134,7 @@ def get_appointment_scheduler_tools_func(arcade_client):
         
         try:
             # Get Google tools for calendar management
-            google_tools = await get_arcade_tools(arcade_client, ["google"])
+            google_tools = await get_arcade_tools(arcade_client, toolkits=["google"])
             tools.extend(google_tools)
         except Exception as e:
             logger.warning(f"Could not add Google tools: {e}")
@@ -186,11 +186,14 @@ async def create_appointment_scheduler_agent(arcade_client=None, get_tools_func=
        - Provide facility contact information
        - Share cancellation and rescheduling policies
 
-    💡 AVAILABLE TOOLS:
-    - schedule_treatment_appointment: Schedule appointments with facilities
-    - Google Calendar: Create and manage appointment events
-    - Gmail: Send appointment confirmations and reminders
-    - Google Docs: Create appointment preparation checklists
+    💡 SPECIFIC ARCADE TOOLS TO USE:
+    - schedule_treatment_appointment: Schedule appointments with facilities (custom tool)
+    - `Google.CreateEvent`: Create calendar events for appointments
+    - `Google.FindTimeSlotsWhenEveryoneIsFree`: Find optimal appointment times
+    - `Google.SendEmail`: Send appointment confirmations and reminders
+    - `Google.CreateBlankDocument`: Create appointment preparation checklists
+    - `Google.CreateContact`: Add facility contacts for easy access
+    - `Google.ListCalendars`: Manage multiple calendars if needed
 
     🏥 APPOINTMENT TYPES TO MANAGE:
     **Mental Health:**
@@ -346,6 +349,6 @@ async def create_appointment_scheduler_agent(arcade_client=None, get_tools_func=
         name="TreatmentAppointmentScheduler",
         instructions=instructions,
         tools=tools,
-        model="gpt-4.1",
+        model="gpt-4o",
         model_settings=ModelSettings(temperature=0.3)  # Slightly higher for more conversational scheduling
     ) 

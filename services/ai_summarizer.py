@@ -27,7 +27,7 @@ class TreatmentSummarizer:
     def __init__(self):
         """Initialize the AI summarizer with OpenAI client"""
         self.client = AsyncOpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-        self.model = "gpt-4.1"  # Using the new GPT-4.1 model
+        self.model = "gpt-4o"  # Using the new GPT-4.1 model
         self.cache = {}  # Simple in-memory cache
         
     def _generate_cache_key(self, text: str) -> str:

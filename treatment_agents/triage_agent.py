@@ -5,8 +5,7 @@ from agents_arcade.errors import AuthorizationError as ArcadeAuthorizationError
 from arcadepy import AuthenticationError as ArcadeAuthenticationError
 from typing import List, Any
 
-# Import the guardrails we created
-from .guardrails import TREATMENT_INPUT_GUARDRAILS, TREATMENT_OUTPUT_GUARDRAILS
+# Guardrails removed for simplified operation
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +13,8 @@ def get_treatment_triage_tools_func(arcade_client):
     """Get tools for treatment triage agent including web search and forms"""
     async def inner(context):
         try:
-            return await get_arcade_tools(arcade_client, ["google", "web_search"])
+            # Use comprehensive toolkits for triage with correct parameter name
+            return await get_arcade_tools(arcade_client, toolkits=["google", "web"])
         except ArcadeAuthenticationError as e:
             logger.warning(f"Arcade API authentication failed for triage agent tools: {e}")
             return []  # Return empty list if API key is invalid
@@ -121,7 +121,6 @@ IF the user message lacks comprehensive profile information:
 - Trust that guardrails will handle crisis detection, privacy protection, and topic relevance""",
         tools=tools,
         handoffs=handoff_actions,
-        input_guardrails=TREATMENT_INPUT_GUARDRAILS,
-        output_guardrails=TREATMENT_OUTPUT_GUARDRAILS,
+
         model="gpt-4.1",
     ) 

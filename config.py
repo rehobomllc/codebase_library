@@ -69,7 +69,31 @@ class Config:
     ENABLE_COST_TRACKING: bool = os.getenv("ENABLE_COST_TRACKING", "true").lower() == "true"
     # Enables Google integration via Arcade for features like Docs, Calendar, Reminders
     ENABLE_ARCADE_GOOGLE_TOOLS: bool = os.getenv("ENABLE_ARCADE_GOOGLE_TOOLS", "true").lower() == "true"
-
+    
+    # Enhanced Arcade Features
+    ENABLE_SLACK_INTEGRATION: bool = os.getenv("ENABLE_SLACK_INTEGRATION", "false").lower() == "true"
+    ENABLE_LINKEDIN_INTEGRATION: bool = os.getenv("ENABLE_LINKEDIN_INTEGRATION", "false").lower() == "true"
+    ENABLE_GITHUB_INTEGRATION: bool = os.getenv("ENABLE_GITHUB_INTEGRATION", "false").lower() == "true"
+    ENABLE_NOTION_INTEGRATION: bool = os.getenv("ENABLE_NOTION_INTEGRATION", "false").lower() == "true"
+    ENABLE_ARXIV_RESEARCH: bool = os.getenv("ENABLE_ARXIV_RESEARCH", "true").lower() == "true"
+    ENABLE_STRIPE_PAYMENT: bool = os.getenv("ENABLE_STRIPE_PAYMENT", "false").lower() == "true"
+    ENABLE_X_SOCIAL: bool = os.getenv("ENABLE_X_SOCIAL", "false").lower() == "true"
+    
+    # Agent Optimization Features
+    ENABLE_AGENT_OPTIMIZATION: bool = os.getenv("ENABLE_AGENT_OPTIMIZATION", "true").lower() == "true"
+    ENABLE_PROACTIVE_AUTH_CHECKS: bool = os.getenv("ENABLE_PROACTIVE_AUTH_CHECKS", "true").lower() == "true"
+    AGENT_TOOL_CACHING: bool = os.getenv("AGENT_TOOL_CACHING", "true").lower() == "true"
+    
+    # Advanced Toolkit Configuration
+    PREFERRED_TOOLKITS: List[str] = os.getenv(
+        "PREFERRED_TOOLKITS", 
+        "google,web,arxiv"
+    ).split(",")
+    
+    RESTRICTED_TOOLKITS: List[str] = os.getenv(
+        "RESTRICTED_TOOLKITS", 
+        ""
+    ).split(",") if os.getenv("RESTRICTED_TOOLKITS") else []
 
     # --- Error Handling ---
     MAX_RETRIES_VALIDATION: int = int(os.getenv("MAX_RETRIES_VALIDATION", "2"))

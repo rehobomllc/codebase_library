@@ -115,6 +115,7 @@ class TreatmentNavigator {
         }
         
         this.userId = newUserId;
+        window.currentUserId = newUserId; // Keep global reference in sync
         localStorage.setItem('treatment_navigator_user_id', newUserId);
         this.updateUIForUser();
         this.showAlert('User ID set successfully! You can now start chatting.', 'success');
@@ -186,6 +187,9 @@ class TreatmentNavigator {
             if (response.reply) {
                 this.addMessageToChat(response.reply, 'bot');
                 
+                // Check if bot suggests insurance card upload
+                this.checkForInsuranceUploadSuggestion(response.reply);
+                
                 // Handle appointment scheduling if present
                 if (response.appointment_id) {
                     this.handleAppointmentScheduled(response.appointment_id);
@@ -250,6 +254,24 @@ class TreatmentNavigator {
         }
     }
     
+    checkForInsuranceUploadSuggestion(botReply) {
+        // Keywords that suggest insurance verification
+        const insuranceKeywords = [
+            'insurance card', 'upload', 'photo', 'image', 'verify coverage',
+            'insurance information', 'member id', 'plan details', 'insurance plan'
+        ];
+        
+        const replyLower = botReply.toLowerCase();
+        const suggestsUpload = insuranceKeywords.some(keyword => replyLower.includes(keyword));
+        
+        if (suggestsUpload) {
+            // Show the upload button
+            if (window.showInsuranceUploadOption) {
+                window.showInsuranceUploadOption();
+            }
+        }
+    }
+
     handleAppointmentScheduled(appointmentId) {
         this.trackEvent('appointment_scheduled', {
             appointment_id: appointmentId,
@@ -431,6 +453,25 @@ class TreatmentNavigator {
     }
 }
 
+// Global functions for integration
+window.addBotMessage = function(message) {
+    if (window.treatmentNavigator) {
+        window.treatmentNavigator.addMessageToChat(message, 'bot');
+    }
+};
+
+window.sendMessageToChat = function(message) {
+    if (window.treatmentNavigator) {
+        const messageInput = document.getElementById('user-message');
+        if (messageInput) {
+            messageInput.value = message;
+            window.treatmentNavigator.sendMessage();
+        }
+    }
+};
+
+window.currentUserId = null;
+
 // Utility functions
 function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -449,6 +490,9 @@ function generateUserId() {
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.treatmentNavigator = new TreatmentNavigator();
+    
+    // Set global currentUserId
+    window.currentUserId = window.treatmentNavigator.userId;
     
     // Add helpful shortcut for generating user ID
     const userIdInput = document.getElementById('user-id');
